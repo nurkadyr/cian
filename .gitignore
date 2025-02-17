@@ -1,0 +1,11 @@
+.idea
+.venv
+sitemaps
+parsersDb
+cache
+test.json
+test.py
+test2.py
+export_sitemap.py
+extrack_urls.py
+enums.cs
