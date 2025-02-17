@@ -18,7 +18,7 @@ from pymongo import MongoClient
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-BATCH_SIZE = 3
+BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 70
 MAX_WORKERS = 36
 
