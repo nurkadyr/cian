@@ -11,6 +11,7 @@ from io import BytesIO
 
 import aiohttp
 from PIL import Image
+from curl_cffi import requests
 from fake_headers import Headers
 from undetected_playwright.async_api import async_playwright
 from pymongo import MongoClient
@@ -186,27 +187,33 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
 
 
 async def download_image_list(images, db_photos, proxy):
-    timeout = aiohttp.ClientTimeout(total=120)
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), timeout=timeout,
-                                     proxy=proxy_url) as session:
-        tasks = [download_image(session, url, db_photos) for url in images]
+
+    async with requests.AsyncSession(impersonate="chrome") as session:
+        tasks = [download_image(session, url, db_photos, proxy_url) for url in images]
         for i in await asyncio.gather(*tasks):
             yield i
 
 
-async def download_image(session, url, db_photos) -> (str, str):
+async def download_image(session, url, db_photos, proxy) -> (str, str):
     try:
-        async with session.get(url) as response:
-            if response.status == 200:
-                img = Image.open(BytesIO(await response.read()))
-                buffer = BytesIO()
-                img.save(buffer, format="JPEG", quality=50)
-                image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "Referer": "https://www.cian.ru/"
+        }
 
-                return url, str(insert_photo(db_photos, image_base64).inserted_id)
-            else:
-                print(f"Failed to download {url}, status: {response.status}")
+        response = await session.get(url, headers=headers, proxies={"http": proxy, "https": proxy}, timeout=30)
+
+        if response.status_code == 200:
+            img = Image.open(BytesIO(response.content))
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=50)
+            image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+            return url, str(insert_photo(db_photos, image_base64).inserted_id)
+        else:
+            print(f"Failed to download {url}, status: {response.status_code}")
+
     except Exception as e:
         print(f"Error downloading {url}: {e}")
 
