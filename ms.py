@@ -10,6 +10,7 @@ def get_connection():
         "DATABASE=ParsersDb2;"  # Имя базы данных
         "UID=nurkadyr;"  # Логин
         "PWD=rpxV3T1D"  # Пароль
+        "Encrypt=yes;"
         "TrustServerCertificate=yes"
     )
 
