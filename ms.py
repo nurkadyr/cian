@@ -9,9 +9,9 @@ def get_connection():
         "SERVER=192.168.1.59;"  # Имя сервера
         "DATABASE=ParsersDb2;"  # Имя базы данных
         "UID=nurkadyr;"  # Логин
-        "PWD=rpxV3T1D"  # Пароль
+        "PWD=rpxV3T1D;"  # Пароль
         "Encrypt=yes;"
-        "TrustServerCertificate=no"
+        "TrustServerCertificate=yes"
     )
 
 # Функция для добавления данных
