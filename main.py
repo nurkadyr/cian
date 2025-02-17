@@ -19,7 +19,7 @@ from pymongo import MongoClient
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-BATCH_SIZE = 1
+BATCH_SIZE = 2
 MAX_QUEUE_SIZE = 70
 MAX_WORKERS = 36
 
@@ -152,7 +152,7 @@ async def scrape_page(context, page_url, proxy, db_html, db_photos, db_screensho
 async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 "--disable-blink-features=AutomationControlled",  # Маскировка бота
                 "--no-sandbox",
@@ -189,7 +189,7 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
 async def download_image_list(images, db_photos, proxy):
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
 
-    async with requests.AsyncSession(impersonate="chrome",verify=False) as session:
+    async with requests.AsyncSession(impersonate="chrome", verify=False, timeout=30) as session:
         tasks = [download_image(session, url, db_photos, proxy_url) for url in images]
         for i in await asyncio.gather(*tasks):
             yield i
@@ -261,7 +261,7 @@ def extract_urls_from_folder():
                         if count % 100 == 0:
                             print(count)
 
-                        if count < 10000:
+                        if count < 10700:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
