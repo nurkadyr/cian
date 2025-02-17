@@ -272,11 +272,13 @@ async def worker(queue, proxy_url):
         while True:
             urls_chunk = await queue.get()
             if urls_chunk is None:  # Сигнал остановки
+                print("urls_chunk is None")
                 break
 
             result = await loop.run_in_executor(executor, run_async_parse, urls_chunk, proxy_url)
             print(f"✅ Завершён процесс для {len(urls_chunk)} URL")
             error_urls += result
+            print(result)
             if len(error_urls) > BATCH_SIZE:
                 urls = error_urls[:BATCH_SIZE]
                 error_urls = error_urls[BATCH_SIZE:]
