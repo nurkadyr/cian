@@ -13,7 +13,6 @@ def get_connection():
         "TrustServerCertificate=yes"
     )
 
-connection = get_connection()
 # Функция для добавления данных
 def insert_product(conn,
                    source, category, segment_on_source, vehicle_sub_type, region, deal_type, type_,
