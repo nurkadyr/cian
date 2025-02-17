@@ -175,14 +175,12 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
             extra_http_headers={**headers, 'Referer': 'https://google.com'},
             viewport={"width": 1280, "height": 1580}
         )
-        tasks = [scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots) for url in
-                 urls]  # Создаём 50 задач
-        results = await asyncio.gather(*tasks)  # Запускаем
+
+        result = await scrape_page(context, urls[0], proxy_url, db_html, db_photos, db_screenshots)  # Запускаем
         await context.close()
         await browser.close()
 
-        for result in results:
-            yield result
+        yield result
 
 
 async def download_image_list(images, db_photos, proxy):
