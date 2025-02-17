@@ -11,7 +11,7 @@ def get_connection():
         "UID=nurkadyr;"  # Логин
         "PWD=rpxV3T1D"  # Пароль
         "Encrypt=yes;"
-        "TrustServerCertificate=yes"
+        "TrustServerCertificate=no"
     )
 
 # Функция для добавления данных
