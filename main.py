@@ -19,9 +19,9 @@ from pymongo import MongoClient
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-BATCH_SIZE = 5
+BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 40
-MAX_WORKERS = 18
+MAX_WORKERS = 36
 
 
 async def parse_url(urls, proxy_url):
@@ -73,17 +73,7 @@ async def parse_url(urls, proxy_url):
     return error_urls
 
 
-yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
-today_date = datetime.datetime.now().strftime("%d %b")
-month_translation = {
-    "Jan": "янв", "Feb": "фев", "Mar": "мар", "Apr": "апр",
-    "May": "мая", "Jun": "июн", "Jul": "июл", "Aug": "авг",
-    "Sep": "сен", "Oct": "окт", "Nov": "ноя", "Dec": "дек"
-}
 
-for eng, rus in month_translation.items():
-    yesterday_date = yesterday_date.replace(eng, rus)
-    today_date = today_date.replace(eng, rus)
 
 
 async def scrape_page(context, page_url,proxy, db_html, db_photos, db_screenshots):
@@ -95,7 +85,17 @@ async def scrape_page(context, page_url,proxy, db_html, db_photos, db_screenshot
 
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = await date_element.inner_text(timeout=5000)
+        yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
+        today_date = datetime.datetime.now().strftime("%d %b")
+        month_translation = {
+            "Jan": "янв", "Feb": "фев", "Mar": "мар", "Apr": "апр",
+            "May": "мая", "Jun": "июн", "Jul": "июл", "Aug": "авг",
+            "Sep": "сен", "Oct": "окт", "Nov": "ноя", "Dec": "дек"
+        }
 
+        for eng, rus in month_translation.items():
+            yesterday_date = yesterday_date.replace(eng, rus)
+            today_date = today_date.replace(eng, rus)
         if "вчера" in text:
             new_text = text.replace("вчера", yesterday_date)
             await date_element.evaluate('(node, newText) => node.innerText = newText', new_text)
