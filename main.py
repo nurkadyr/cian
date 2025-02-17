@@ -188,7 +188,7 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
 
 
 async def download_image_list(images, db_photos):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
         tasks = [download_image(session, url, db_photos) for url in images]
         for i in await asyncio.gather(*tasks):
             yield i
