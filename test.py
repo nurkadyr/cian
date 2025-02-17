@@ -45,8 +45,6 @@ async def get_site_data(urls, proxy_url) -> (str, str):
 
         headers = header.generate()
         context = await browser.new_context(
-            user_agent=headers.pop("User-Agent"),
-            extra_http_headers={**headers, 'Referer': 'https://google.com'},
             viewport={"width": 1280, "height": 1580}
         )
         tasks = [scrape_page(context, url) for url in

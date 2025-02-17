@@ -7,13 +7,12 @@ import multiprocessing
 import os
 import time
 import uuid
-from concurrent.futures import ProcessPoolExecutor
 from io import BytesIO
 
-from PIL import Image
 import aiohttp
+from PIL import Image
 from fake_headers import Headers
-from playwright.async_api import async_playwright
+from undetected_playwright.async_api import async_playwright
 from pymongo import MongoClient
 
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
@@ -73,10 +72,7 @@ async def parse_url(urls, proxy_url):
     return error_urls
 
 
-
-
-
-async def scrape_page(context, page_url,proxy, db_html, db_photos, db_screenshots):
+async def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots):
     try:
         page = await context.new_page()
         # page.on("request", lambda request: print(f"\n🔹 Запрос: {request.url}\n{request.headers}"))
@@ -136,7 +132,7 @@ async def scrape_page(context, page_url,proxy, db_html, db_photos, db_screenshot
         html = await page.content()
         await page.close()
         images_mongo = []
-        async for i in download_image_list(images, db_photos,proxy):
+        async for i in download_image_list(images, db_photos, proxy):
             images_mongo.append(i)
         data["images_mongo"] = images_mongo
 
@@ -179,7 +175,8 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
             extra_http_headers={**headers, 'Referer': 'https://google.com'},
             viewport={"width": 1280, "height": 1580}
         )
-        tasks = [scrape_page(context, url,proxy_url, db_html, db_photos, db_screenshots) for url in urls]  # Создаём 50 задач
+        tasks = [scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots) for url in
+                 urls]  # Создаём 50 задач
         results = await asyncio.gather(*tasks)  # Запускаем
         await context.close()
         await browser.close()
@@ -297,7 +294,6 @@ def worker(queue, proxy_url):
             urls = error_urls[:BATCH_SIZE]
             error_urls = error_urls[BATCH_SIZE:]
             queue.put(urls)
-
 
 
 async def producer(queue):
