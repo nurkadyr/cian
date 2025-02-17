@@ -188,8 +188,9 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
 
 
 async def download_image_list(images, db_photos, proxy):
+    timeout = aiohttp.ClientTimeout(total=120)
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), timeout=120000,
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), timeout=timeout,
                                      proxy=proxy_url) as session:
         tasks = [download_image(session, url, db_photos) for url in images]
         for i in await asyncio.gather(*tasks):
