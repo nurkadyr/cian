@@ -85,9 +85,8 @@ for eng, rus in month_translation.items():
     today_date = today_date.replace(eng, rus)
 
 
-async def scrape_page(context, page_url, db_html, db_photos, db_screenshots):
+async def scrape_page(context, page_url,proxy, db_html, db_photos, db_screenshots):
     try:
-        print(page_url)
         page = await context.new_page()
         # page.on("request", lambda request: print(f"\n🔹 Запрос: {request.url}\n{request.headers}"))
         # await page.route("**/*", save_resource)  # Перехватываем все запросы
@@ -136,7 +135,7 @@ async def scrape_page(context, page_url, db_html, db_photos, db_screenshots):
         html = await page.content()
         await page.close()
         images_mongo = []
-        async for i in download_image_list(images, db_photos):
+        async for i in download_image_list(images, db_photos,proxy):
             images_mongo.append(i)
         data["images_mongo"] = images_mongo
 
@@ -179,7 +178,7 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
             extra_http_headers={**headers, 'Referer': 'https://google.com'},
             viewport={"width": 1280, "height": 1580}
         )
-        tasks = [scrape_page(context, url, db_html, db_photos, db_screenshots) for url in urls]  # Создаём 50 задач
+        tasks = [scrape_page(context, url,proxy_url, db_html, db_photos, db_screenshots) for url in urls]  # Создаём 50 задач
         results = await asyncio.gather(*tasks)  # Запускаем
         await context.close()
         await browser.close()
@@ -188,8 +187,10 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
             yield result
 
 
-async def download_image_list(images, db_photos):
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+async def download_image_list(images, db_photos, proxy):
+    proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), timeout=120000,
+                                     proxy=proxy_url) as session:
         tasks = [download_image(session, url, db_photos) for url in images]
         for i in await asyncio.gather(*tasks):
             yield i
