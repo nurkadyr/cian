@@ -20,7 +20,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 60
-MAX_WORKERS = 21
+MAX_WORKERS = 18
 
 
 async def parse_url(urls, proxy_url):
@@ -309,17 +309,14 @@ async def main():
         {"server": "http://195.208.86.106:63376", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://195.208.91.14:62704", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://85.143.48.253:62458", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://154.209.222.56:63628", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://194.226.126.60:62400", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://212.60.7.221:63968", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://45.92.172.172:62024", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://45.129.79.236:64622", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://213.226.103.168:62434", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://194.156.105.39:63514", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://193.232.222.86:63724", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://176.103.86.68:64738", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://212.192.58.187:62820", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://193.150.99.230:62486", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://45.147.15.196:62842", "username": "JKThSkEu", "password": "whh3hUFn"},
         {"server": "http://195.208.95.129:64640", "username": "JKThSkEu", "password": "whh3hUFn"}
     ]
