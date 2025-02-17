@@ -18,9 +18,9 @@ from pymongo import MongoClient
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-BATCH_SIZE = 1
-MAX_QUEUE_SIZE = 64
-MAX_WORKERS = 3
+BATCH_SIZE = 10
+MAX_QUEUE_SIZE = 90
+MAX_WORKERS = 30
 
 
 async def parse_url(urls, proxy_url):
