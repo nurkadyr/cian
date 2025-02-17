@@ -87,6 +87,7 @@ for eng, rus in month_translation.items():
 
 async def scrape_page(context, page_url, db_html, db_photos, db_screenshots):
     try:
+        print(page_url)
         page = await context.new_page()
         # page.on("request", lambda request: print(f"\n🔹 Запрос: {request.url}\n{request.headers}"))
         # await page.route("**/*", save_resource)  # Перехватываем все запросы
@@ -242,7 +243,6 @@ def extract_urls_from_folder():
     folder_path = "urls"
     if not os.path.exists(folder_path):
         raise FileNotFoundError(f"Папка '{folder_path}' не найдена")
-    count = 0
     for filename in os.listdir(folder_path):
         if filename.endswith(".txt"):  # Обрабатываем только .txt файлы
             file_path = os.path.join(folder_path, filename)
@@ -251,9 +251,6 @@ def extract_urls_from_folder():
                     url = line.strip()
                     if url:
                         if not is_url_exists(conn, url):
-                            count += 1
-                            if count % 100 == 0:
-                                print("Completed",count)
                             yield url
     conn.close()
 
