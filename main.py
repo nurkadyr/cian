@@ -3,6 +3,7 @@ import base64
 import datetime
 import hashlib
 import json
+import multiprocessing
 import os
 import time
 import uuid
@@ -262,38 +263,53 @@ def run_async_parse(urls, proxy_url):
     return asyncio.run(parse_url(urls, proxy_url))
 
 
-async def worker(queue, proxy_url):
-    """Берёт задания из очереди и запускает процесс."""
-    loop = asyncio.get_running_loop()
+# async def worker(queue, proxy_url):
+#     """Берёт задания из очереди и запускает процесс."""
+#     loop = asyncio.get_running_loop()
+#
+#     with ProcessPoolExecutor(max_workers=1) as executor:  # Один процесс на воркера
+#         error_urls = []
+#         while True:
+#             urls_chunk = await queue.get()
+#             if urls_chunk is None:  # Сигнал остановки
+#                 break
+#
+#             result = await loop.run_in_executor(executor, run_async_parse, urls_chunk, proxy_url)
+#             error_urls += result
+#             if len(error_urls) > BATCH_SIZE:
+#                 urls = error_urls[:BATCH_SIZE]
+#                 error_urls = error_urls[BATCH_SIZE:]
+#                 queue.put(urls)
+#             queue.task_done()
 
-    with ProcessPoolExecutor(max_workers=1) as executor:  # Один процесс на воркера
-        error_urls = []
-        while True:
-            urls_chunk = await queue.get()
-            if urls_chunk is None:  # Сигнал остановки
-                break
+def worker(queue, proxy_url):
+    error_urls = []
+    while True:
+        urls_chunk = queue.get()
+        if urls_chunk is None:
+            break  # Завершаем процесс
 
-            result = await loop.run_in_executor(executor, run_async_parse, urls_chunk, proxy_url)
-            error_urls += result
-            if len(error_urls) > BATCH_SIZE:
-                urls = error_urls[:BATCH_SIZE]
-                error_urls = error_urls[BATCH_SIZE:]
-                queue.put(urls)
-            queue.task_done()
+        result = run_async_parse(urls_chunk, proxy_url)
+        error_urls += result
+
+        if len(error_urls) > BATCH_SIZE:
+            urls = error_urls[:BATCH_SIZE]
+            error_urls = error_urls[BATCH_SIZE:]
+            queue.put(urls)
+
 
 
 async def producer(queue):
-    """Постепенно наполняет очередь, чтобы не перегружать память."""
+    """Наполняет очередь URL, чтобы не перегружать память."""
     urls_chunk = []
     for i in extract_urls_from_folder():
         urls_chunk.append(i)
         if len(urls_chunk) < BATCH_SIZE:
             continue
 
-        # Ограничиваем размер очереди (ждём, пока в ней освободится место)
-        await queue.put(urls_chunk)
+        queue.put(urls_chunk)  # Добавляем в очередь
         while queue.qsize() >= MAX_QUEUE_SIZE:
-            await asyncio.sleep(0.1)  # Немного подождём, если очередь переполнена
+            await asyncio.sleep(0.1)  # Ждём, если очередь переполнена
         urls_chunk = []
 
 
@@ -319,24 +335,30 @@ async def main():
         {"server": "http://195.208.95.129:64640", "username": "JKThSkEu", "password": "whh3hUFn"}
     ]
 
-    queue = asyncio.Queue()
-    producer_task = asyncio.create_task(producer(queue))
-    # 🔹 Запускаем процессы (макс. `MAX_WORKERS` штук)
-    await asyncio.sleep(2)
-    workers = [asyncio.create_task(worker(queue, proxy_list[_])) for _ in range(MAX_WORKERS)]
+    # queue = multiprocessing.Queue()
+    # producer_task = asyncio.create_task(producer(queue))
+    # # 🔹 Запускаем процессы (макс. `MAX_WORKERS` штук)
+    # await asyncio.sleep(5)
+    # workers = [asyncio.create_task(worker(queue, proxy_list[_])) for _ in range(MAX_WORKERS)]
 
-    # 🔹 Наполняем очередь с ограничением размера
+    queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
+
+    producer_task = asyncio.create_task(producer(queue))
+
+    processes = []
+    for i in range(MAX_WORKERS):
+        proxy = proxy_list[i % len(proxy_list)]
+        p = multiprocessing.Process(target=worker, args=(queue, proxy))
+        p.start()
+        processes.append(p)
+
     await producer_task
 
-    # 🔹 Ждём, пока все задачи в очереди обработаются
-    await queue.join()
+    for _ in processes:
+        queue.put(None)
 
-    # 🔹 Останавливаем воркеров
-    for _ in workers:
-        queue.put_nowait(None)
-
-    for w in workers:
-        await w
+    for p in processes:
+        p.join()
 
 
 if __name__ == "__main__":
