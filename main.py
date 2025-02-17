@@ -287,6 +287,7 @@ def worker(queue, proxy_url):
     while True:
         urls_chunk = queue.get()
         if urls_chunk is None:
+            print("worker end")
             break  # Завершаем процесс
 
         result = run_async_parse(urls_chunk, proxy_url)
