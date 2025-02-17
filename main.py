@@ -189,7 +189,7 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
 async def download_image_list(images, db_photos, proxy):
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
 
-    async with requests.AsyncSession(impersonate="chrome") as session:
+    async with requests.AsyncSession(impersonate="chrome",verify=False) as session:
         tasks = [download_image(session, url, db_photos, proxy_url) for url in images]
         for i in await asyncio.gather(*tasks):
             yield i
@@ -198,7 +198,6 @@ async def download_image_list(images, db_photos, proxy):
 async def download_image(session, url, db_photos, proxy) -> (str, str):
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
             "Referer": "https://www.cian.ru/"
         }
 
@@ -261,6 +260,9 @@ def extract_urls_from_folder():
                         count += 1
                         if count % 100 == 0:
                             print(count)
+
+                        if count < 10000:
+                            continue
                         if not is_url_exists(conn, url):
                             yield url
     conn.close()
