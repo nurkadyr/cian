@@ -341,7 +341,7 @@ async def main():
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
 
     producer_task = asyncio.create_task(producer(queue))
-
+    await asyncio.sleep(30)
     processes = []
     for i in range(MAX_WORKERS):
         proxy = proxy_list[i % len(proxy_list)]
