@@ -250,6 +250,7 @@ def extract_urls_from_folder():
     folder_path = "urls"
     if not os.path.exists(folder_path):
         raise FileNotFoundError(f"Папка '{folder_path}' не найдена")
+    count = 0
     for filename in os.listdir(folder_path):
         if filename.endswith(".txt"):  # Обрабатываем только .txt файлы
             file_path = os.path.join(folder_path, filename)
@@ -257,6 +258,9 @@ def extract_urls_from_folder():
                 for line in file:
                     url = line.strip()
                     if url:
+                        count += 1
+                        if count % 100 == 0:
+                            print(count)
                         if not is_url_exists(conn, url):
                             yield url
     conn.close()
