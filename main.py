@@ -19,8 +19,8 @@ from mongo import insert_photo, insert_html_data, insert_screenshot, update_uniq
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
 BATCH_SIZE = 10
-MAX_QUEUE_SIZE = 90
-MAX_WORKERS = 30
+MAX_QUEUE_SIZE = 60
+MAX_WORKERS = 21
 
 
 async def parse_url(urls, proxy_url):
