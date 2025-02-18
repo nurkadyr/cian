@@ -24,8 +24,8 @@ MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 36
 
 
-def parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
-    success, url, html_id, image_id, data = get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots)
+def parse_url(browser, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
+    success, url, html_id, image_id, data = get_site_data(browser, urls, proxy_url, db_html, db_photos, db_screenshots)
     if success:
         product_id = insert_product(
             conn,
@@ -139,38 +139,22 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, pr
         return False, page_url, None, None, None
 
 
-def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",  # Маскировка бота
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-infobars",
-                "--disable-gpu",
-            ],
-            proxy=proxy_url
-        )
-        header = Headers(
-            browser="chrome",  # Generate only Chrome UA
-            os="win",  # Generate ony Windows platform
-            headers=True  # generate misc headers
+def get_site_data(browser, url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
+    header = Headers(
+        browser="chrome",  # Generate only Chrome UA
+        os="win",  # Generate ony Windows platform
+        headers=True  # generate misc headers
+    )
 
-        )
+    headers = header.generate()
+    context = browser.new_context(
+        user_agent=headers.pop("User-Agent"),
+        viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
+    )
+    result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
+    context.close()
 
-        headers = header.generate()
-        context = browser.new_context(
-            user_agent=headers.pop("User-Agent"),
-            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
-        )
-        result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
-
-        context.close()
-        browser.close()
-
-        return result
+    return result
 
 
 def download_image_list(images, db_photos, proxy):
@@ -236,16 +220,25 @@ def worker(queue, proxy_url):
     db_photos = client["adsPhotos2"]
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
-    while True:
-        urls_chunk = queue.get()
-        print("start", urls_chunk, queue.qsize())
-        if urls_chunk is None:
-            print("worker end")
-            break  # Завершаем процесс
-        success, url = parse_url(urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=False,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+            ],
+            proxy=proxy_url
+        )
+        while True:
+            urls_chunk = queue.get()
+            print("start", urls_chunk, queue.qsize())
+            if urls_chunk is None:
+                print("worker end")
+                break  # Завершаем процесс
+            success, url = parse_url(browser, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
 
-        if not success:
-            queue.put(url)
+            if not success:
+                queue.put(url)
+        browser.close()
     conn.close()
 
 
