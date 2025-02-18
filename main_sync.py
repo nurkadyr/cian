@@ -13,9 +13,14 @@ from PIL import Image
 from curl_cffi import requests
 from pymongo import MongoClient
 from undetected_playwright.sync_api import sync_playwright
-
+from fake_useragent import UserAgent
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
+
+ua = UserAgent()
+ua.min_version = 131
+ua.os = "windows"
+ua.browser = "chrome"
 
 MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 36
@@ -67,7 +72,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
         if response.status == 404:
             return False, None, None, None, None
         if response.status != 200:
-            print(response.status,page_url, proxy_url)
+            print(response.status, page_url, proxy_url)
             return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
@@ -152,7 +157,7 @@ def download_image(url, db_photos, proxy) -> (str, str):
             "Referer": "https://www.cian.ru/"
         }
 
-        response = requests.get(url, headers=headers, impersonate="chrome",timeout=60, verify=False)
+        response = requests.get(url, headers=headers, impersonate="chrome", timeout=60, verify=False)
 
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
@@ -203,18 +208,7 @@ def worker(queue, proxy_url):
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
     with sync_playwright() as p:
-        browser = p.chromium.launch_persistent_context(
-            user_data_dir=profile_path,
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--disable-webrtc"
-            ],
-            proxy=proxy_url,
-            timezone_id="Europe/Moscow",
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
-        )
+        browser = None
 
         while True:
             urls_chunk = queue.get()
@@ -222,11 +216,38 @@ def worker(queue, proxy_url):
             if urls_chunk is None:
                 print("worker end")
                 break  # Завершаем процесс
+            if browser is None:
+                browser = p.chromium.launch_persistent_context(
+                    user_data_dir=profile_path,
+                    headless=True,
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-webrtc"
+                    ],
+                    proxy=proxy_url,
+                    timezone_id="Europe/Moscow",
+                    user_agent=ua.random,
+                    viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
+                )
             page = browser.new_page()
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
             page.close()
             if not success and url is not None:
                 queue.put(url)
+            if not success and url is None:
+                browser.close()
+                browser = p.chromium.launch_persistent_context(
+                    user_data_dir=profile_path,
+                    headless=True,
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-webrtc"
+                    ],
+                    proxy=proxy_url,
+                    timezone_id="Europe/Moscow",
+                    user_agent=ua.random,
+                    viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
+                )
         browser.close()
     conn.close()
 
