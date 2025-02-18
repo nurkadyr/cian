@@ -238,11 +238,11 @@ def extract_urls_from_folder():
 
 def worker(queue, proxy_url):
     while True:
-        print("queue.qsize()", queue.qsize())
         urls_chunk = queue.get()
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
+        print("start", urls_chunk)
         success, url = parse_url(urls_chunk, proxy_url)
 
         if not success:
@@ -255,6 +255,13 @@ async def producer(queue):
         queue.put(i)  # Добавляем в очередь
         while queue.qsize() >= MAX_QUEUE_SIZE:
             await asyncio.sleep(1)
+
+
+def monitor_processes(processes, queue):
+    """Мониторинг процессов"""
+    while any(p.is_alive() for p in processes):
+        print(f"Очередь: {queue.qsize()}, Запущено процессов: {sum(p.is_alive() for p in processes)}")
+        time.sleep(3)
 
 
 async def main():
@@ -282,13 +289,15 @@ async def main():
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
 
     producer_task = asyncio.create_task(producer(queue))
-    await asyncio.sleep(30)
     processes = []
     for i in range(MAX_WORKERS):
         proxy = proxy_list[i % len(proxy_list)]
         p = multiprocessing.Process(target=worker, args=(queue, proxy))
         p.start()
         processes.append(p)
+
+    monitor_proc = multiprocessing.Process(target=monitor_processes, args=(processes,))
+    monitor_proc.start()
 
     await producer_task
 
@@ -297,6 +306,8 @@ async def main():
 
     for p in processes:
         p.join()
+
+    monitor_proc.terminate()
 
 
 if __name__ == "__main__":
