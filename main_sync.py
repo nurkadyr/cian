@@ -130,7 +130,7 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots):
         html = page.content()
         page.close()
         images_mongo = []
-        async for i in download_image_list(images, db_photos, proxy):
+        for i in download_image_list(images, db_photos, proxy):
             images_mongo.append(i)
         data["images_mongo"] = images_mongo
 
@@ -212,31 +212,6 @@ def download_image(url, db_photos, proxy) -> (str, str):
         print(f"Error downloading {url}: {e}")
 
 
-CACHE_DIR = "cache"
-
-
-async def save_resource(route, request):
-    """Перехватывает запросы и кеширует CSS и JS файлы"""
-    url = request.url
-    ext = url.split("?")[0].split(".")[-1]  # Определяем тип файла
-    if ext in ["css", "js", "svg"]:
-        cache_path = os.path.join(CACHE_DIR, f"{hashlib.sha1(url.encode('utf-8')).hexdigest()}.{ext}")
-
-        if os.path.exists(cache_path):  # Если уже закешировано, отдаем из кеша
-            with open(cache_path, "rb") as f:
-                content = f.read()
-            await route.fulfill(body=content, headers={"Content-Type": f"text/{ext}"})
-            return
-
-        await route.continue_()
-        response = await request.response()
-        if response and response.ok:
-            content = await response.body()
-            with open(cache_path, "wb") as f:
-                f.write(content)
-            print(f"Saved to cache: {cache_path}")
-        return
-    await route.continue_()
 
 
 def extract_urls_from_folder():
