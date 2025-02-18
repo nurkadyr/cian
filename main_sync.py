@@ -19,7 +19,7 @@ from mongo import insert_photo, insert_html_data, insert_screenshot, update_uniq
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 36
+MAX_WORKERS = 1
 
 
 def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -63,6 +63,14 @@ def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
+        def log_request(request):
+            print(f"URL: {request.url}")
+            print(f"Headers: {request.headers}")
+            print("=" * 50)
+
+        page.on("request", log_request)
+
+
         page.goto(page_url, timeout=120000, wait_until="load")
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
@@ -195,29 +203,28 @@ def extract_urls_from_folder():
 
 
 def worker(queue, proxy_url):
-    # client = MongoClient("mongodb://localhost:27017/")
-    client = MongoClient("mongodb://192.168.1.59:27017/")
+    client = MongoClient("mongodb://localhost:27017/")
+    # client = MongoClient("mongodb://192.168.1.59:27017/")
     db_html = client["htmlData2"]
     db_photos = client["adsPhotos2"]
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 "--disable-blink-features=AutomationControlled",
             ],
             proxy=proxy_url
         )
-        header = Headers(
-            browser="chrome",  # Generate only Chrome UA
-            os="win",  # Generate ony Windows platform
-            headers=True  # generate misc headers
-        )
-
-        headers = header.generate()
+        # header = Headers(
+        #     browser="chrome",  # Generate only Chrome UA
+        #     os="win",  # Generate ony Windows platform
+        #     headers=True  # generate misc headers
+        # )
+        #
+        # headers = header.generate()
         context = browser.new_context(
-            user_agent=headers.pop("User-Agent"),
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
         page = context.new_page()
