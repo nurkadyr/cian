@@ -31,8 +31,8 @@ def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, con
             source=1, category=2, segment_on_source=3, vehicle_sub_type=4, region=5,
             deal_type=6, type_=7,
             brand=100, url=url, is_from_archive=0,
-            task_guid="550e8400-e29b-41d4-a716-446655440000",
             creation_date=datetime.datetime.utcnow(), status=1, mongo_id=html_id,
+            task_guid="550e8400-e29b-41d4-a716-446655440000",
             id_on_source=9999999, is_files_complete=1,
             last_modification_date=datetime.datetime.utcnow(),
             parser_version=1.0, weapon_kind=2, machine_name="Server-01"
@@ -67,8 +67,8 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
         response = page.goto(page_url, timeout=120000, wait_until="load")
         if response.status == 404:
             return False, None, None, None, None
-        if response.status == 403:
-            print(403, page_url, proxy_url)
+        if response.status != 200:
+            print(403,page.content(), page_url, proxy_url)
             return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
