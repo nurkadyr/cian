@@ -201,7 +201,7 @@ def extract_urls_from_folder():
 def get_browser(p, proxy_url, profile_path):
     return p.chromium.launch_persistent_context(
         user_data_dir=profile_path,
-        headless=True,
+        headless=False,
         args=[
             "--disable-blink-features=AutomationControlled",
             "--disable-webrtc",
