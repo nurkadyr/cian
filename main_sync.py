@@ -206,32 +206,37 @@ def worker(queue, proxy_url):
     db_photos = client["adsPhotos2"]
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
+
     with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-webrtc"
+            ],
+            proxy=proxy_url,
+
+        )
+        context = browser.new_context(
+            # user_data_dir=profile_path,
+            timezone_id="Europe/Moscow",
+            user_agent=ua.chrome,
+            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
+        )
+        page = context.new_page()
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
             if urls_chunk is None:
                 print("worker end")
                 break  # Завершаем процесс
-            browser = p.chromium.launch_persistent_context(
-                user_data_dir=profile_path,
-                headless=True,
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--disable-webrtc"
-                ],
-                proxy=proxy_url,
-                timezone_id="Europe/Moscow",
-                user_agent=ua.chrome,
-                viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
-            )
-            page = browser.new_page()
+
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
-            page.close()
             if not success and url is not None:
                 queue.put(url)
-
-            browser.close()
+        page.close()
+        context.close()
+        browser.close()
     conn.close()
 
 
