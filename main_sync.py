@@ -20,8 +20,8 @@ from pymongo import MongoClient
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-MAX_QUEUE_SIZE = 3
-MAX_WORKERS = 1
+MAX_QUEUE_SIZE = 20
+MAX_WORKERS = 36
 
 
 def parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -142,7 +142,7 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, pr
 def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
+            headless=True,
             args=[
                 "--disable-blink-features=AutomationControlled",  # Маскировка бота
                 "--no-sandbox",
@@ -153,15 +153,16 @@ def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, s
             ],
             proxy=proxy_url
         )
-        # header = Headers(
-        #     browser="chrome",  # Generate only Chrome UA
-        #     os="win",  # Generate ony Windows platform
-        #     headers=True  # generate misc headers
-        #
-        # )
-        #
-        # headers = header.generate()
+        header = Headers(
+            browser="chrome",  # Generate only Chrome UA
+            os="win",  # Generate ony Windows platform
+            headers=True  # generate misc headers
+
+        )
+
+        headers = header.generate()
         context = browser.new_context(
+            user_agent=headers.pop("User-Agent"),
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
         result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
