@@ -142,7 +142,7 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, pr
 def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 "--disable-blink-features=AutomationControlled",  # Маскировка бота
                 "--no-sandbox",
