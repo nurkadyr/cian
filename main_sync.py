@@ -20,7 +20,6 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 ua = UserAgent(os="Windows")
 ua.min_version = 131
 
-
 MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 36
 
@@ -208,17 +207,14 @@ def worker(queue, proxy_url):
     conn = get_connection()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=profile_path,
             headless=True,
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-webrtc"
             ],
             proxy=proxy_url,
-
-        )
-        context = browser.new_context(
-            # user_data_dir=profile_path,
             timezone_id="Europe/Moscow",
             user_agent=ua.chrome,
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)},
@@ -227,8 +223,13 @@ def worker(queue, proxy_url):
                 "referer": "https://www.google.com/",
                 "upgrade-insecure-requests": "1"
             }
+
         )
-        page = context.new_page()
+        # context = browser.new_context(
+        # user_data_dir=profile_path,
+
+        # )
+        page = browser.new_page()
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
