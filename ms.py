@@ -4,23 +4,23 @@ import pyodbc
 # Подключение к MS SQL Server
 
 def get_connection():
-    return pyodbc.connect(
-        "DRIVER={ODBC Driver 18 for SQL Server};"
-        "SERVER=localhost;"  # Имя сервера
-        "DATABASE=ParsersDbOutsource;"  # Имя базы данных
-        "UID=SA;"  # Логин
-        "PWD=aszxaszx!A;"  # Пароль
-        "TrustServerCertificate=yes"
-    )
     # return pyodbc.connect(
     #     "DRIVER={ODBC Driver 18 for SQL Server};"
-    #     "SERVER=192.168.1.59;"  # Имя сервера
-    #     "DATABASE=ParsersDb2;"  # Имя базы данных
-    #     "UID=nurkadyr;"  # Логин
-    #     "PWD=rpxV3T1D;"  # Пароль
-    #     "Encrypt=yes;"
+    #     "SERVER=localhost;"  # Имя сервера
+    #     "DATABASE=ParsersDbOutsource;"  # Имя базы данных
+    #     "UID=SA;"  # Логин
+    #     "PWD=aszxaszx!A;"  # Пароль
     #     "TrustServerCertificate=yes"
     # )
+    return pyodbc.connect(
+        "DRIVER={ODBC Driver 18 for SQL Server};"
+        "SERVER=192.168.1.59;"  # Имя сервера
+        "DATABASE=ParsersDb2;"  # Имя базы данных
+        "UID=nurkadyr;"  # Логин
+        "PWD=rpxV3T1D;"  # Пароль
+        "Encrypt=yes;"
+        "TrustServerCertificate=yes"
+    )
 
 
 # Функция для добавления данных

@@ -198,8 +198,8 @@ profile_path = os.path.join(os.getcwd(), "user_data")
 
 
 def worker(queue, proxy_url):
-    client = MongoClient("mongodb://localhost:27017/")
-    # client = MongoClient("mongodb://192.168.1.59:27017/")
+    # client = MongoClient("mongodb://localhost:27017/")
+    client = MongoClient("mongodb://192.168.1.59:27017/")
     db_html = client["htmlData2"]
     db_photos = client["adsPhotos2"]
     db_screenshots = client["adsScreenshots2"]
