@@ -5,6 +5,7 @@ import hashlib
 import json
 import multiprocessing
 import os
+import random
 import time
 import uuid
 from io import BytesIO
@@ -24,13 +25,8 @@ MAX_QUEUE_SIZE = 70
 MAX_WORKERS = 36
 
 
-async def parse_url(urls, proxy_url):
-    client = MongoClient("mongodb://192.168.1.59:27017/")
-    db_html = client["htmlData2"]
-    db_photos = client["adsPhotos2"]
-    db_screenshots = client["adsScreenshots2"]
+async def parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
     error_urls = []
-    conn = get_connection()
     async for success, url, html_id, image_id, data in get_site_data(urls, proxy_url, db_html, db_photos,
                                                                      db_screenshots):
         if success:
@@ -76,8 +72,6 @@ async def parse_url(urls, proxy_url):
 async def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots):
     try:
         page = await context.new_page()
-        # page.on("request", lambda request: print(f"\n🔹 Запрос: {request.url}\n{request.headers}"))
-        # await page.route("**/*", save_resource)  # Перехватываем все запросы
         await page.goto(page_url, timeout=120000)
 
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
@@ -163,18 +157,16 @@ async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> 
             ],
             proxy=proxy_url
         )
-        header = Headers(
-            browser="chrome",  # Generate only Chrome UA
-            os="win",  # Generate ony Windows platform
-            headers=True  # generate misc headers
-
-        )
-
-        headers = header.generate()
+        # header = Headers(
+        #     browser="chrome",  # Generate only Chrome UA
+        #     os="win",  # Generate ony Windows platform
+        #     headers=True  # generate misc headers
+        #
+        # )
+        #
+        # headers = header.generate()
         context = await browser.new_context(
-            user_agent=headers.pop("User-Agent"),
-            extra_http_headers={**headers, 'Referer': 'https://google.com'},
-            viewport={"width": 1280, "height": 1580}
+            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
         tasks = [scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots) for url in
                  urls]  # Создаём 50 задач
@@ -268,45 +260,32 @@ def extract_urls_from_folder():
     conn.close()
 
 
-def run_async_parse(urls, proxy_url):
+def run_async_parse(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
     """Запускает parse_url в синхронном процессе"""
-    return asyncio.run(parse_url(urls, proxy_url))
+    return asyncio.run(parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn))
 
-
-# async def worker(queue, proxy_url):
-#     """Берёт задания из очереди и запускает процесс."""
-#     loop = asyncio.get_running_loop()
-#
-#     with ProcessPoolExecutor(max_workers=1) as executor:  # Один процесс на воркера
-#         error_urls = []
-#         while True:
-#             urls_chunk = await queue.get()
-#             if urls_chunk is None:  # Сигнал остановки
-#                 break
-#
-#             result = await loop.run_in_executor(executor, run_async_parse, urls_chunk, proxy_url)
-#             error_urls += result
-#             if len(error_urls) > BATCH_SIZE:
-#                 urls = error_urls[:BATCH_SIZE]
-#                 error_urls = error_urls[BATCH_SIZE:]
-#                 queue.put(urls)
-#             queue.task_done()
 
 def worker(queue, proxy_url):
     error_urls = []
+    client = MongoClient("mongodb://192.168.1.59:27017/")
+    db_html = client["htmlData2"]
+    db_photos = client["adsPhotos2"]
+    db_screenshots = client["adsScreenshots2"]
+    conn = get_connection()
     while True:
         urls_chunk = queue.get()
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
 
-        result = run_async_parse(urls_chunk, proxy_url)
+        result = run_async_parse(urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
         error_urls += result
 
         if len(error_urls) > BATCH_SIZE:
             urls = error_urls[:BATCH_SIZE]
             error_urls = error_urls[BATCH_SIZE:]
             queue.put(urls)
+    conn.close()
 
 
 async def producer(queue):
@@ -354,7 +333,6 @@ async def main():
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
 
     producer_task = asyncio.create_task(producer(queue))
-    await asyncio.sleep(30)
     processes = []
     for i in range(MAX_WORKERS):
         proxy = proxy_list[i % len(proxy_list)]
