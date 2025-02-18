@@ -24,12 +24,7 @@ MAX_QUEUE_SIZE = 70
 MAX_WORKERS = 36
 
 
-def parse_url(urls, proxy_url):
-    client = MongoClient("mongodb://192.168.1.59:27017/")
-    db_html = client["htmlData2"]
-    db_photos = client["adsPhotos2"]
-    db_screenshots = client["adsScreenshots2"]
-    conn = get_connection()
+def parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
     success, url, html_id, image_id, data = get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots)
     if success:
         product_id = insert_product(
@@ -65,7 +60,6 @@ def parse_url(urls, proxy_url):
             )
             update_unique_status(db_photos, db_screenshots, "photos", mongo_id, product_id, product_file_id)
 
-    conn.close()
     return success, url
 
 
@@ -229,7 +223,7 @@ def extract_urls_from_folder():
                         if count % 100 == 0:
                             print(count)
 
-                        if count < 11000:
+                        if count < 13200:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -237,16 +231,22 @@ def extract_urls_from_folder():
 
 
 def worker(queue, proxy_url):
+    client = MongoClient("mongodb://192.168.1.59:27017/")
+    db_html = client["htmlData2"]
+    db_photos = client["adsPhotos2"]
+    db_screenshots = client["adsScreenshots2"]
+    conn = get_connection()
     while True:
         urls_chunk = queue.get()
         print("start", urls_chunk, queue.qsize())
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
-        success, url = parse_url(urls_chunk, proxy_url)
+        success, url = parse_url(urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
 
         if not success:
             queue.put(url)
+    conn.close()
 
 
 async def producer(queue):
