@@ -15,9 +15,10 @@ def scrape_data(playwright: Playwright):
         headless=False,
         args=args,
         timezone_id="Europe/Moscow",
-        proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'})
+        proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+    )
     page = browser.new_page()
-    response = page.goto("https://ekb.cian.ru/sale/flat/310636964/")
+    response = page.goto("https://www.browserscan.net/")
     print(response.status)
     input("Press ENTER to exit:")
     browser.close()
