@@ -66,11 +66,8 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
         response = page.goto(page_url, timeout=120000, wait_until="load")
         if response.status == 404:
             return False, None, None, None, None
-        if response.status == 403:
-            print(403, page_url, proxy_url)
-            return False, page_url, None, None,
         if response.status != 200:
-            print(response.status, page.content(),page_url, proxy_url)
+            print(response.status,page_url, proxy_url)
             return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
