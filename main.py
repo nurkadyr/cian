@@ -253,7 +253,7 @@ def extract_urls_from_folder():
                         if count % 100 == 0:
                             print(count)
 
-                        if count < 10700:
+                        if count < 19600:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
