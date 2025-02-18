@@ -22,8 +22,9 @@ MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 36
 
 
-def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
-    success, url, html_id, image_id, data = get_site_data(page, urls, proxy_url, db_html, db_photos, db_screenshots)
+def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
+    success, url, html_id, image_id, data = scrape_page(page, page_url, proxy_url, db_html, db_photos, db_screenshots,
+                                                        proxy_url)
     if success:
         product_id = insert_product(
             conn,
@@ -63,7 +64,12 @@ def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        page.goto(page_url, timeout=120000, wait_until="load")
+        response = page.goto(page_url, timeout=120000, wait_until="load")
+        if response.status == 404:
+            return False, None, None, None, None
+        if response.status == 403:
+            print(403, page_url, proxy_url)
+            return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
         yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
@@ -132,12 +138,6 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
         return False, page_url, None, None, None
 
 
-def get_site_data(page, url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
-    result = scrape_page(page, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
-
-    return result
-
-
 def download_image_list(images, db_photos, proxy):
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
 
@@ -187,7 +187,7 @@ def extract_urls_from_folder():
                         if count % 100 == 0:
                             print(count)
 
-                        if count < 19600:
+                        if count < 20700:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -226,9 +226,8 @@ def worker(queue, proxy_url):
                 break  # Завершаем процесс
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
 
-            if not success:
+            if not success and url is not None:
                 queue.put(url)
-        context.close()
         browser.close()
     conn.close()
 

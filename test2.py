@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from undetected_playwright.sync_api import sync_playwright, Playwright
+from playwright.sync_api import sync_playwright, Playwright
 
 profile_path = os.path.join(os.getcwd(), "user_data")
 
@@ -12,7 +12,7 @@ def scrape_data(playwright: Playwright):
     args.append("--disable-webrtc")
     browser = playwright.chromium.launch_persistent_context(
         user_data_dir=profile_path,
-        headless=False,
+        headless=True,
         args=args,
         timezone_id="Europe/Moscow",
         proxy={
@@ -21,7 +21,8 @@ def scrape_data(playwright: Playwright):
             'password': 'whh3hUFn'
         })
     page = browser.new_page()
-    page.goto("https://www.browserscan.net/")
+    response = page.goto("https://krasnoyarsk.cian.ru/sale/flat/313164518/",timeout=12000)
+    print(response.status)
     input("Press ENTER to exit:")
     browser.close()
 
