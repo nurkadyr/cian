@@ -20,9 +20,8 @@ from pymongo import MongoClient
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-BATCH_SIZE = 3
-MAX_QUEUE_SIZE = 70
-MAX_WORKERS = 36
+MAX_QUEUE_SIZE = 3
+MAX_WORKERS = 1
 
 
 def parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -154,17 +153,15 @@ def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, s
             ],
             proxy=proxy_url
         )
-        header = Headers(
-            browser="chrome",  # Generate only Chrome UA
-            os="win",  # Generate ony Windows platform
-            headers=True  # generate misc headers
-
-        )
-
-        headers = header.generate()
+        # header = Headers(
+        #     browser="chrome",  # Generate only Chrome UA
+        #     os="win",  # Generate ony Windows platform
+        #     headers=True  # generate misc headers
+        #
+        # )
+        #
+        # headers = header.generate()
         context = browser.new_context(
-            user_agent=headers.pop("User-Agent"),
-            extra_http_headers={**headers, 'Referer': 'https://google.com'},
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
         result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
@@ -232,6 +229,7 @@ def extract_urls_from_folder():
 
 
 def worker(queue, proxy_url):
+    # client = MongoClient("mongodb://localhost:27017/")
     client = MongoClient("mongodb://192.168.1.59:27017/")
     db_html = client["htmlData2"]
     db_photos = client["adsPhotos2"]
@@ -302,4 +300,22 @@ async def main():
 if __name__ == "__main__":
     start_time = time.time()
     asyncio.run(main())
+    # client = MongoClient("mongodb://localhost:27017/")
+    # db_html = client["htmlData2"]
+    # db_photos = client["adsPhotos2"]
+    # db_screenshots = client["adsScreenshots2"]
+    # conn = get_connection()
+    # success, url = parse_url(
+    #     "https://ekb.cian.ru/sale/flat/305725065/",
+    #     {
+    #         'server': 'http://194.226.115.57:62210',
+    #         'username': 'JKThSkEu',
+    #         'password': 'whh3hUFn'
+    #     },
+    #     db_html,
+    #     db_photos,
+    #     db_screenshots,
+    #     conn
+    # )
+    # conn.close()
     print(time.time() - start_time)
