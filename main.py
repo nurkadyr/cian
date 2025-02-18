@@ -274,6 +274,7 @@ def worker(queue, proxy_url):
     conn = get_connection()
     while True:
         urls_chunk = queue.get()
+        print("start", urls_chunk, queue.qsize())
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
