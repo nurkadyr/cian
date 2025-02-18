@@ -152,8 +152,7 @@ def download_image(url, db_photos, proxy) -> (str, str):
             "Referer": "https://www.cian.ru/"
         }
 
-        response = requests.get(url, headers=headers, impersonate="chrome", proxies={"http": proxy, "https": proxy},
-                                timeout=60, verify=False)
+        response = requests.get(url, headers=headers, impersonate="chrome",timeout=60, verify=False)
 
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
