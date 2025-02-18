@@ -184,9 +184,10 @@ def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, s
 def download_image_list(images, db_photos, proxy):
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
 
-    tasks = [download_image(url, db_photos, proxy_url) for url in images if url is not None]
+    tasks = [download_image(url, db_photos, proxy_url) for url in images]
     for i in tasks:
-        yield i
+        if i is not None:
+            yield i
 
 
 def download_image(url, db_photos, proxy) -> (str, str):
@@ -231,7 +232,7 @@ def extract_urls_from_folder():
                         if count % 100 == 0:
                             print(count)
 
-                        if count < 10700:
+                        if count < 11000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
