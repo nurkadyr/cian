@@ -146,7 +146,7 @@ async def scrape_page(context, page_url, proxy, db_html, db_photos, db_screensho
 async def get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 "--disable-blink-features=AutomationControlled",  # Маскировка бота
                 "--no-sandbox",
