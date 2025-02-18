@@ -221,7 +221,12 @@ def worker(queue, proxy_url):
             # user_data_dir=profile_path,
             timezone_id="Europe/Moscow",
             user_agent=ua.chrome,
-            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
+            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)},
+            extra_http_headers={
+                "accept-language": "en-US,en;q=0.9",
+                "referer": "https://www.google.com/",
+                "upgrade-insecure-requests": "1"
+            }
         )
         page = context.new_page()
         while True:
