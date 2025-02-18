@@ -209,7 +209,7 @@ def worker(queue, proxy_url):
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
             user_data_dir=profile_path,
-            headless=True,
+            headless=False,
             args=[
                 "--disable-blink-features=AutomationControlled",
                 "--disable-webrtc"
