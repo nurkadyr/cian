@@ -39,7 +39,7 @@ def scrape_data(playwright: Playwright):
         timezone_id="Europe/Volgograd",
         # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
         # proxy={"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
-        proxy={'server': 'http://176.103.95.57:63822', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+        proxy={'server': 'http://37.139.58.84:64536', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
     )
 
     # load_cookies(context)

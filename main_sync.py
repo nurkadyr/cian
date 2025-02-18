@@ -23,8 +23,8 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # ua.min_version = 131
 # print(ua.chrome.replace("131","133"))
 # exit()
-MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 20
+MAX_QUEUE_SIZE = 10
+MAX_WORKERS = 4
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -236,10 +236,11 @@ def worker(queue, proxy_url):
     conn = get_connection()
 
     with sync_playwright() as p:
-        profile_path = os.path.join(os.getcwd(), "user_data", hashlib.md5(proxy_url["server"].encode()).hexdigest())
+        profile_path = os.path.join(os.getcwd(), "user_data", hashlib.sha256(proxy_url["server"].encode()).hexdigest())
         browser = get_browser(p, proxy_url, profile_path)
 
         page = browser.new_page()
+        error_count = 0
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
@@ -253,7 +254,13 @@ def worker(queue, proxy_url):
                 browser.close()
                 shutil.rmtree(profile_path)
                 browser = get_browser(p, proxy_url, profile_path)
+                page = browser.new_page()
                 queue.put(url)
+                error_count+=1
+                if error_count == 3:
+                    break
+            if success:
+                error_count = 0
         page.close()
         browser.close()
     conn.close()
@@ -284,41 +291,32 @@ async def main():
             "username": "JKThSkEu",
             "password": "whh3hUFn"
         },
-        {
-            "server": "http://37.139.58.84:64536",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
+
         {
             "server": "http://2.56.138.111:64590",
             "username": "JKThSkEu",
             "password": "whh3hUFn"
         },
-        {
-            "server": "http://45.145.171.15:62704",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        {
-            "server": "http://212.192.199.170:63280",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        {
-            "server": "http://46.150.251.222:63826",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        {
-            "server": "http://195.208.91.83:62158",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        {
-            "server": "http://154.223.200.11:63054",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        }
+        # {
+        #     "server": "http://45.145.171.15:62704",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # },
+        # {
+        #     "server": "http://212.192.199.170:63280",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # },
+        # {
+        #     "server": "http://46.150.251.222:63826",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # },
+        # {
+        #     "server": "http://154.223.200.11:63054",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # }
     ]
 
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
