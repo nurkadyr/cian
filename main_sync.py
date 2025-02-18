@@ -5,6 +5,7 @@ import hashlib
 import json
 import multiprocessing
 import os
+import random
 import time
 import uuid
 from io import BytesIO
@@ -63,7 +64,7 @@ def parse_url(urls, proxy_url, db_html, db_photos, db_screenshots, conn):
     return success, url
 
 
-def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots):
+def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
         page = context.new_page()
         # page.on("request", lambda request: print(f"\n🔹 Запрос: {request.url}\n{request.headers}"))
@@ -135,7 +136,7 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots):
             data
         )
     except Exception as e:
-        print(e)
+        print(e, page_url, proxy_url)
         return False, page_url, None, None, None
 
 
@@ -164,9 +165,9 @@ def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, s
         context = browser.new_context(
             user_agent=headers.pop("User-Agent"),
             extra_http_headers={**headers, 'Referer': 'https://google.com'},
-            viewport={"width": 1280, "height": 1580}
+            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
-        result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots)
+        result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
 
         context.close()
         browser.close()
