@@ -249,9 +249,9 @@ def worker(queue, proxy_url):
 
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
             if not success and url is not None:
-                os.remove(profile_path)
                 page.close()
                 browser.close()
+                shutil.rmtree(profile_path)
                 browser = get_browser(p, proxy_url, profile_path)
                 queue.put(url)
         page.close()
