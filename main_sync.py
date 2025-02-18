@@ -207,8 +207,8 @@ def worker(queue, proxy_url):
     conn = get_connection()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch_persistent_context(
-            user_data_dir=profile_path,
+        browser = p.chromium.launch(
+            # user_data_dir=profile_path,
             headless=False,
             args=[
                 "--disable-blink-features=AutomationControlled",
@@ -216,6 +216,10 @@ def worker(queue, proxy_url):
             ],
             proxy=proxy_url,
             timezone_id="Europe/Moscow",
+
+
+        )
+        context = browser.new_context(
             user_agent=ua.chrome,
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)},
             extra_http_headers={
@@ -225,11 +229,7 @@ def worker(queue, proxy_url):
             }
 
         )
-        # context = browser.new_context(
-        # user_data_dir=profile_path,
-
-        # )
-        page = browser.new_page()
+        page = context.new_page()
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
