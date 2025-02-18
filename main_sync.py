@@ -219,15 +219,16 @@ def worker(queue, proxy_url):
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
-        page = browser.new_page()
+
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
             if urls_chunk is None:
                 print("worker end")
                 break  # Завершаем процесс
+            page = browser.new_page()
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
-
+            page.close()
             if not success and url is not None:
                 queue.put(url)
         browser.close()
