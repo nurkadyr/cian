@@ -17,10 +17,9 @@ from fake_useragent import UserAgent
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-ua = UserAgent()
+ua = UserAgent(os="Windows")
 ua.min_version = 131
-ua.os = "windows"
-ua.browser = "chrome"
+
 
 MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 36
@@ -226,7 +225,7 @@ def worker(queue, proxy_url):
                     ],
                     proxy=proxy_url,
                     timezone_id="Europe/Moscow",
-                    user_agent=ua.random,
+                    user_agent=ua.chrome,
                     viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
                 )
             page = browser.new_page()
@@ -245,7 +244,7 @@ def worker(queue, proxy_url):
                     ],
                     proxy=proxy_url,
                     timezone_id="Europe/Moscow",
-                    user_agent=ua.random,
+                    user_agent=ua.chrome,
                     viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
                 )
         browser.close()
