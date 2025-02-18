@@ -1,10 +1,12 @@
 import asyncio
 import base64
 import datetime
+import hashlib
 import json
 import multiprocessing
 import os
 import random
+import shutil
 import time
 import uuid
 from io import BytesIO
@@ -17,11 +19,12 @@ from fake_useragent import UserAgent
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-ua = UserAgent(os="Windows")
-ua.min_version = 131
-
+# ua = UserAgent(os="Windows")
+# ua.min_version = 131
+# print(ua.chrome.replace("131","133"))
+# exit()
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 36
+MAX_WORKERS = 20
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -195,7 +198,33 @@ def extract_urls_from_folder():
     conn.close()
 
 
-profile_path = os.path.join(os.getcwd(), "user_data")
+def get_browser(p, proxy_url, profile_path):
+    return p.chromium.launch_persistent_context(
+        user_data_dir=profile_path,
+        headless=True,
+        args=[
+            "--disable-blink-features=AutomationControlled",
+            "--disable-webrtc",
+            "--disable-features=WebRTC,WebGL,Canvas",
+            "--disable-dev-shm-usage",
+            "--no-sandbox"
+        ],
+        proxy=proxy_url,
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        viewport={"width": 1200, "height": 1400},
+        extra_http_headers={
+            "accept-language": "en-US,en;q=0.9",
+            "referer": "https://www.google.com/",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Site": "cross-site",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Ch-Ua-Mobile": "?0",
+            "upgrade-insecure-requests": "1"
+        },
+        timezone_id="Europe/Moscow",
+
+    )
 
 
 def worker(queue, proxy_url):
@@ -207,27 +236,10 @@ def worker(queue, proxy_url):
     conn = get_connection()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            # user_data_dir=profile_path,
-            headless=False,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--disable-webrtc"
-            ],
-            proxy=proxy_url,
+        profile_path = os.path.join(os.getcwd(), "user_data", hashlib.md5(proxy_url["server"].encode()).hexdigest())
+        browser = get_browser(p, proxy_url, profile_path)
 
-        )
-        context = browser.new_context(
-            user_agent=ua.chrome,
-            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)},
-            extra_http_headers={
-                "accept-language": "en-US,en;q=0.9",
-                "referer": "https://www.google.com/",
-                "upgrade-insecure-requests": "1"
-            },
-            timezone_id="Europe/Moscow",
-        )
-        page = context.new_page()
+        page = browser.new_page()
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
@@ -237,9 +249,12 @@ def worker(queue, proxy_url):
 
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
             if not success and url is not None:
+                os.remove(profile_path)
+                page.close()
+                browser.close()
+                browser = get_browser(p, proxy_url, profile_path)
                 queue.put(url)
         page.close()
-        context.close()
         browser.close()
     conn.close()
 
@@ -254,24 +269,56 @@ async def producer(queue):
 
 async def main():
     proxy_list = [
-        {"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://45.132.38.70:64582", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://45.146.171.213:63692", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://91.220.206.188:62146", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://194.226.115.57:62210", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://195.208.86.106:63376", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://195.208.91.14:62704", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://85.143.48.253:62458", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://194.226.126.60:62400", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://212.60.7.221:63968", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://45.92.172.172:62024", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://213.226.103.168:62434", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://194.156.105.39:63514", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://193.232.222.86:63724", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://176.103.86.68:64738", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://212.192.58.187:62820", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://45.147.15.196:62842", "username": "JKThSkEu", "password": "whh3hUFn"},
-        {"server": "http://195.208.95.129:64640", "username": "JKThSkEu", "password": "whh3hUFn"}
+        {
+            "server": "http://176.103.95.57:63822",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://212.193.168.53:61934",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://195.209.145.142:62796",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://37.139.58.84:64536",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://2.56.138.111:64590",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://45.145.171.15:62704",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://212.192.199.170:63280",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://46.150.251.222:63826",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://195.208.91.83:62158",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
+        {
+            "server": "http://154.223.200.11:63054",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        }
     ]
 
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
