@@ -65,7 +65,6 @@ def parse_url(urls, proxy_url):
             )
             update_unique_status(db_photos, db_screenshots, "photos", mongo_id, product_id, product_file_id)
 
-
     conn.close()
     return success, url
 
@@ -197,7 +196,7 @@ def download_image(url, db_photos, proxy) -> (str, str):
         }
 
         response = requests.get(url, headers=headers, impersonate="chrome", proxies={"http": proxy, "https": proxy},
-                                timeout=60,verify=False)
+                                timeout=60, verify=False)
 
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
@@ -211,8 +210,6 @@ def download_image(url, db_photos, proxy) -> (str, str):
 
     except Exception as e:
         print(f"Error downloading {url}: {e}")
-
-
 
 
 def extract_urls_from_folder():
@@ -241,11 +238,12 @@ def extract_urls_from_folder():
 
 def worker(queue, proxy_url):
     while True:
+        print("queue.qsize()", queue.qsize())
         urls_chunk = queue.get()
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
-        success,url = parse_url(urls_chunk, proxy_url)
+        success, url = parse_url(urls_chunk, proxy_url)
 
         if not success:
             queue.put(url)
