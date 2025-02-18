@@ -24,8 +24,8 @@ MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 36
 
 
-def parse_url(browser, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
-    success, url, html_id, image_id, data = get_site_data(browser, urls, proxy_url, db_html, db_photos, db_screenshots)
+def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
+    success, url, html_id, image_id, data = get_site_data(page, urls, proxy_url, db_html, db_photos, db_screenshots)
     if success:
         product_id = insert_product(
             conn,
@@ -63,13 +63,9 @@ def parse_url(browser, urls, proxy_url, db_html, db_photos, db_screenshots, conn
     return success, url
 
 
-def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
+def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        page = context.new_page()
-        # page.on("request", lambda request: print(f"\n🔹 Запрос: {request.url}\n{request.headers}"))
-        # await page.route("**/*", save_resource)  # Перехватываем все запросы
-        page.goto(page_url, timeout=120000)
-
+        page.goto(page_url, timeout=120000, wait_until="networkidle")
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
         yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
@@ -121,7 +117,6 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, pr
         }
 
         html = page.content()
-        page.close()
         images_mongo = []
         for i in download_image_list(images, db_photos, proxy):
             images_mongo.append(i)
@@ -139,20 +134,8 @@ def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots, pr
         return False, page_url, None, None, None
 
 
-def get_site_data(browser, url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
-    header = Headers(
-        browser="chrome",  # Generate only Chrome UA
-        os="win",  # Generate ony Windows platform
-        headers=True  # generate misc headers
-    )
-
-    headers = header.generate()
-    context = browser.new_context(
-        user_agent=headers.pop("User-Agent"),
-        viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
-    )
-    result = scrape_page(context, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
-    context.close()
+def get_site_data(page, url, proxy_url, db_html, db_photos, db_screenshots) -> (str, str):
+    result = scrape_page(page, url, proxy_url, db_html, db_photos, db_screenshots, proxy_url)
 
     return result
 
@@ -228,16 +211,29 @@ def worker(queue, proxy_url):
             ],
             proxy=proxy_url
         )
+        header = Headers(
+            browser="chrome",  # Generate only Chrome UA
+            os="win",  # Generate ony Windows platform
+            headers=True  # generate misc headers
+        )
+
+        headers = header.generate()
+        context = browser.new_context(
+            user_agent=headers.pop("User-Agent"),
+            viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
+        )
+        page = context.new_page()
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())
             if urls_chunk is None:
                 print("worker end")
                 break  # Завершаем процесс
-            success, url = parse_url(browser, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
+            success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
 
             if not success:
                 queue.put(url)
+        context.close()
         browser.close()
     conn.close()
 
