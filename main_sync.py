@@ -29,7 +29,6 @@ def parse_url(urls, proxy_url):
     db_html = client["htmlData2"]
     db_photos = client["adsPhotos2"]
     db_screenshots = client["adsScreenshots2"]
-    error_urls = []
     conn = get_connection()
     success, url, html_id, image_id, data = get_site_data(urls, proxy_url, db_html, db_photos, db_screenshots)
     if success:
@@ -66,10 +65,9 @@ def parse_url(urls, proxy_url):
             )
             update_unique_status(db_photos, db_screenshots, "photos", mongo_id, product_id, product_file_id)
 
-    if not success:
-        error_urls.append(url)
+
     conn.close()
-    return error_urls
+    return success, url
 
 
 def scrape_page(context, page_url, proxy, db_html, db_photos, db_screenshots):
@@ -266,19 +264,15 @@ def extract_urls_from_folder():
 
 
 def worker(queue, proxy_url):
-    error_urls = []
     while True:
         urls_chunk = queue.get()
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
-        result = parse_url(urls_chunk, proxy_url)
-        error_urls += result
+        success,url = parse_url(urls_chunk, proxy_url)
 
-        if len(error_urls) > BATCH_SIZE:
-            urls = error_urls[:BATCH_SIZE]
-            error_urls = error_urls[BATCH_SIZE:]
-            queue.put(urls)
+        if not success:
+            queue.put(url)
 
 
 async def producer(queue):
