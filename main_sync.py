@@ -184,7 +184,7 @@ def get_site_data(url, proxy_url, db_html, db_photos, db_screenshots) -> (str, s
 def download_image_list(images, db_photos, proxy):
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
 
-    tasks = [download_image(url, db_photos, proxy_url) for url in images]
+    tasks = [download_image(url, db_photos, proxy_url) for url in images if url is not None]
     for i in tasks:
         yield i
 
@@ -196,7 +196,7 @@ def download_image(url, db_photos, proxy) -> (str, str):
         }
 
         response = requests.get(url, headers=headers, impersonate="chrome", proxies={"http": proxy, "https": proxy},
-                                timeout=30,verify=False)
+                                timeout=60,verify=False)
 
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
