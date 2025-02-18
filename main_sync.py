@@ -24,7 +24,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # print(ua.chrome.replace("131","133"))
 # exit()
 MAX_QUEUE_SIZE = 10
-MAX_WORKERS = 4
+MAX_WORKERS = 1
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -235,34 +235,33 @@ def worker(queue, proxy_url):
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
 
-    with sync_playwright() as p:
-        profile_path = os.path.join(os.getcwd(), "user_data", hashlib.sha256(proxy_url["server"].encode()).hexdigest())
-        browser = get_browser(p, proxy_url, profile_path)
+    error_count = 0
+    while True:
+        urls_chunk = queue.get()
+        print("start", urls_chunk, queue.qsize())
+        if urls_chunk is None:
+            print("worker end")
+            break  # Завершаем процесс
+        with sync_playwright() as p:
+            profile_path = os.path.join(
+                os.getcwd(),
+                "user_data",
+                hashlib.sha256(proxy_url["server"].encode()).hexdigest()
+            )
+            browser = get_browser(p, proxy_url, profile_path)
 
-        page = browser.new_page()
-        error_count = 0
-        while True:
-            urls_chunk = queue.get()
-            print("start", urls_chunk, queue.qsize())
-            if urls_chunk is None:
-                print("worker end")
-                break  # Завершаем процесс
-
+            page = browser.new_page()
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
             if not success and url is not None:
-                page.close()
-                browser.close()
                 shutil.rmtree(profile_path)
-                browser = get_browser(p, proxy_url, profile_path)
-                page = browser.new_page()
                 queue.put(url)
-                error_count+=1
+                error_count += 1
                 if error_count == 3:
                     break
             if success:
                 error_count = 0
-        page.close()
-        browser.close()
+            page.close()
+            browser.close()
     conn.close()
 
 
@@ -276,32 +275,32 @@ async def producer(queue):
 
 async def main():
     proxy_list = [
-        {
-            "server": "http://176.103.95.57:63822",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        {
-            "server": "http://212.193.168.53:61934",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        {
-            "server": "http://195.209.145.142:62796",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-
-        {
-            "server": "http://2.56.138.111:64590",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
         # {
-        #     "server": "http://45.145.171.15:62704",
+        #     "server": "http://176.103.95.57:63822",
         #     "username": "JKThSkEu",
         #     "password": "whh3hUFn"
         # },
+        # {
+        #     "server": "http://212.193.168.53:61934",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # },
+        # {
+        #     "server": "http://195.209.145.142:62796",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # },
+        #
+        # {
+        #     "server": "http://2.56.138.111:64590",
+        #     "username": "JKThSkEu",
+        #     "password": "whh3hUFn"
+        # },
+        {
+            "server": "http://45.145.171.15:62704",
+            "username": "JKThSkEu",
+            "password": "whh3hUFn"
+        },
         # {
         #     "server": "http://212.192.199.170:63280",
         #     "username": "JKThSkEu",
