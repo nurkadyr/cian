@@ -239,10 +239,10 @@ def extract_urls_from_folder():
 def worker(queue, proxy_url):
     while True:
         urls_chunk = queue.get()
+        print("start", urls_chunk, queue.qsize())
         if urls_chunk is None:
             print("worker end")
             break  # Завершаем процесс
-        print("start", urls_chunk)
         success, url = parse_url(urls_chunk, proxy_url)
 
         if not success:
@@ -255,13 +255,6 @@ async def producer(queue):
         queue.put(i)  # Добавляем в очередь
         while queue.qsize() >= MAX_QUEUE_SIZE:
             await asyncio.sleep(1)
-
-
-def monitor_processes(processes, queue):
-    """Мониторинг процессов"""
-    while any(p.is_alive() for p in processes):
-        print(f"Очередь: {queue.qsize()}, Запущено процессов: {sum(p.is_alive() for p in processes)}")
-        time.sleep(3)
 
 
 async def main():
@@ -296,9 +289,6 @@ async def main():
         p.start()
         processes.append(p)
 
-    monitor_proc = multiprocessing.Process(target=monitor_processes, args=(processes,))
-    monitor_proc.start()
-
     await producer_task
 
     for _ in processes:
@@ -306,8 +296,6 @@ async def main():
 
     for p in processes:
         p.join()
-
-    monitor_proc.terminate()
 
 
 if __name__ == "__main__":
