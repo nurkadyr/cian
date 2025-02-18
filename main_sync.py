@@ -215,8 +215,6 @@ def worker(queue, proxy_url):
                 "--disable-webrtc"
             ],
             proxy=proxy_url,
-            timezone_id="Europe/Moscow",
-
 
         )
         context = browser.new_context(
@@ -226,8 +224,8 @@ def worker(queue, proxy_url):
                 "accept-language": "en-US,en;q=0.9",
                 "referer": "https://www.google.com/",
                 "upgrade-insecure-requests": "1"
-            }
-
+            },
+            timezone_id="Europe/Moscow",
         )
         page = context.new_page()
         while True:
