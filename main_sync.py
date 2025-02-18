@@ -19,7 +19,7 @@ from mongo import insert_photo, insert_html_data, insert_screenshot, update_uniq
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 1
+MAX_WORKERS = 36
 
 
 def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -63,14 +63,6 @@ def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        def log_request(request):
-            print(f"URL: {request.url}")
-            print(f"Headers: {request.headers}")
-            print("=" * 50)
-
-        page.on("request", log_request)
-
-
         page.goto(page_url, timeout=120000, wait_until="load")
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
@@ -202,6 +194,9 @@ def extract_urls_from_folder():
     conn.close()
 
 
+profile_path = os.path.join(os.getcwd(), "user_data")
+
+
 def worker(queue, proxy_url):
     client = MongoClient("mongodb://localhost:27017/")
     # client = MongoClient("mongodb://192.168.1.59:27017/")
@@ -210,24 +205,19 @@ def worker(queue, proxy_url):
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=profile_path,
+            headless=True,
             args=[
                 "--disable-blink-features=AutomationControlled",
+                "--disable-webrtc"
             ],
-            proxy=proxy_url
-        )
-        # header = Headers(
-        #     browser="chrome",  # Generate only Chrome UA
-        #     os="win",  # Generate ony Windows platform
-        #     headers=True  # generate misc headers
-        # )
-        #
-        # headers = header.generate()
-        context = browser.new_context(
+            proxy=proxy_url,
+            timezone_id="Europe/Moscow",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
             viewport={"width": random.randint(1200, 1600), "height": random.randint(1400, 1600)}
         )
-        page = context.new_page()
+        page = browser.new_page()
         while True:
             urls_chunk = queue.get()
             print("start", urls_chunk, queue.qsize())

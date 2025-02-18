@@ -4,7 +4,6 @@ sitemaps
 parsersDb
 cache
 test.json
-test2.py
 export_sitemap.py
 extrack_urls.py
 enums.cs
