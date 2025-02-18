@@ -196,7 +196,7 @@ def download_image(url, db_photos, proxy) -> (str, str):
         }
 
         response = requests.get(url, headers=headers, impersonate="chrome", proxies={"http": proxy, "https": proxy},
-                                timeout=30)
+                                timeout=30,verify=False)
 
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
