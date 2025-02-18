@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import datetime
-import hashlib
 import json
 import multiprocessing
 import os
@@ -10,12 +9,11 @@ import time
 import uuid
 from io import BytesIO
 
-import aiohttp
 from PIL import Image
 from curl_cffi import requests
 from fake_headers import Headers
-from undetected_playwright.sync_api import sync_playwright
 from pymongo import MongoClient
+from undetected_playwright.sync_api import sync_playwright
 
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
@@ -65,7 +63,7 @@ def parse_url(page, urls, proxy_url, db_html, db_photos, db_screenshots, conn):
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        page.goto(page_url, timeout=120000, wait_until="networkidle")
+        page.goto(page_url, timeout=120000, wait_until="load")
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.inner_text(timeout=5000)
         yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
@@ -100,7 +98,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             page.locator(selector).evaluate_all("elements => elements.forEach(el => el.remove())")
 
         screenshot_path = f"screenshot/{uuid.uuid4()}.jpeg"
-        page.locator("body").screenshot(path=screenshot_path, type="jpeg", quality=40)
+        page.locator("body").screenshot(path=screenshot_path, type="jpeg", quality=25)
 
         with open(screenshot_path, "rb") as img_file:
             base64_image = base64.b64encode(img_file.read()).decode("utf-8")
@@ -161,7 +159,7 @@ def download_image(url, db_photos, proxy) -> (str, str):
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
             buffer = BytesIO()
-            img.save(buffer, format="JPEG", quality=50)
+            img.save(buffer, format="JPEG", quality=25)
             image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
             return url, str(insert_photo(db_photos, image_base64).inserted_id)
@@ -205,7 +203,7 @@ def worker(queue, proxy_url):
     conn = get_connection()
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
+            headless=True,
             args=[
                 "--disable-blink-features=AutomationControlled",
             ],
