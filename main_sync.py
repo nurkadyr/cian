@@ -23,7 +23,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # ua.min_version = 119
 # print(ua.firefox)
 # exit()
-MAX_QUEUE_SIZE = 10
+MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 40
 
 
@@ -192,7 +192,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count)
 
-                        if count < 23100:
+                        if count < 26100:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
