@@ -202,7 +202,7 @@ def extract_urls_from_folder():
 
 def get_browser(p, proxy_url):
     args = []
-    args.append("--disable-blink-features=AutomationControlled")
+    # args.append("--disable-blink-features=AutomationControlled")
     args.append("--disable-features=WebRTC,WebGL,Canvas")
     args.append("--disable-webrtc")
     args.append("--disable-dev-shm-usage")
