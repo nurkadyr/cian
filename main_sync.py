@@ -67,7 +67,7 @@ def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, con
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        response = page.goto(page_url, timeout=120000)
+        response = page.goto(page_url, timeout=120000, wait_until="load")
 
         if response.status == 404:
             return False, None, None, None, None
