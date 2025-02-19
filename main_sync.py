@@ -24,7 +24,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # print(ua.firefox)
 # exit()
 MAX_QUEUE_SIZE = 10
-MAX_WORKERS = 1
+MAX_WORKERS = 10
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -189,10 +189,10 @@ def extract_urls_from_folder():
                     url = line.strip()
                     if url:
                         count += 1
-                        if count % 100 == 0:
+                        if count % 1000 == 0:
                             print(count)
 
-                        if count < 22400:
+                        if count < 23100:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
