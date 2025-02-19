@@ -1,21 +1,19 @@
 import asyncio
 import base64
 import datetime
-import hashlib
 import json
 import multiprocessing
 import os
 import random
-import shutil
 import time
 import uuid
 from io import BytesIO
 
 from PIL import Image
 from curl_cffi import requests
-from pymongo import MongoClient
 from playwright.sync_api import sync_playwright
-from fake_useragent import UserAgent
+from pymongo import MongoClient
+
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
@@ -140,8 +138,6 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             data
         )
     except Exception as e:
-        if "Timeout 11000ms exceeded" in str(e):
-            print(page.content())
         print(e, page_url, proxy_url)
         return False, page_url, None, None, None
 
@@ -310,8 +306,8 @@ async def main():
         {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+        # {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
     ]
 
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
