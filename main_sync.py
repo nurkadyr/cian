@@ -69,7 +69,7 @@ def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, con
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        response = page.goto(page_url, timeout=120000, wait_until="networkidle")
+        response = page.goto(page_url, timeout=120000)
 
         if response.status == 404:
             return False, None, None, None, None
@@ -263,7 +263,7 @@ def worker(queue, proxy_url):
                 break  # Завершаем процесс
 
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
-            time.sleep(random.randint(5, 10))
+            time.sleep(random.randint(10, 15))
             print("success", success)
             if not success and url is not None:
                 queue.put(url)
