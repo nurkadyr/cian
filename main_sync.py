@@ -140,7 +140,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             data
         )
     except Exception as e:
-        if "Timeout 11000ms exceeded" in e:
+        if "Timeout 11000ms exceeded" in str(e):
             print(page.content())
         print(e, page_url, proxy_url)
         return False, page_url, None, None, None
