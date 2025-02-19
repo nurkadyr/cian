@@ -218,11 +218,29 @@ def get_browser(p, proxy_url):
         headless=True,
         args=args,
         ignore_default_args=["--enable-automation"],
-        # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
-        # proxy={"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
         proxy=proxy_url,
         firefox_user_prefs=firefox_prefs
     )
+
+
+def get_page(browser):
+    context = browser.new_context(
+        timezone_id="Europe/Moscow",
+        permissions=['geolocation'],
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+        viewport={"width": random.choice([1200, 1300, 1400]), "height": random.choice([1600, 1500, 1400])},
+        extra_http_headers={
+            "accept-language": "en-US,en;q=0.9",
+            "referer": "https://www.google.com/",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Site": "cross-site",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Ch-Ua-Mobile": "?0",
+            "upgrade-insecure-requests": "1"
+        }
+    )
+    return context.new_page()
 
 
 def worker(queue, proxy_url):
@@ -235,23 +253,7 @@ def worker(queue, proxy_url):
 
     with sync_playwright() as p:
         browser = get_browser(p, proxy_url)
-        context = browser.new_context(
-            timezone_id="Europe/Moscow",
-            permissions=['geolocation'],
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-            viewport={"width": random.choice([1200,1300,1400]), "height": random.choice([1600,1500,1400])},
-            extra_http_headers={
-                "accept-language": "en-US,en;q=0.9",
-                "referer": "https://www.google.com/",
-                "Sec-Ch-Ua-Platform": '"Windows"',
-                "Sec-Fetch-Site": "cross-site",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Dest": "document",
-                "Sec-Ch-Ua-Mobile": "?0",
-                "upgrade-insecure-requests": "1"
-            }
-        )
-        page = context.new_page()
+        page = get_page(browser)
         error_count = 0
         while True:
             urls_chunk = queue.get()
@@ -267,12 +269,13 @@ def worker(queue, proxy_url):
                 queue.put(url)
                 error_count += 1
                 if error_count == 3:
-                    page = context.new_page()
+                    browser.close()
+                    browser = get_browser(p, proxy_url)
+                    page = get_page(browser)
                 if error_count == 6:
                     break
             if success:
                 error_count = 0
-        page.close()
         browser.close()
     conn.close()
 
