@@ -263,7 +263,7 @@ def worker(queue, proxy_url):
                 break  # Завершаем процесс
 
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
-            time.sleep(random.randint(10, 15))
+            time.sleep(random.randint(10, 30))
             print("success", success)
             if not success and url is not None:
                 queue.put(url)
