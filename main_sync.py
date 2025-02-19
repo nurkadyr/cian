@@ -201,7 +201,12 @@ def extract_urls_from_folder():
 
 
 def get_browser(p, proxy_url):
+    args = []
     # args.append("--disable-blink-features=AutomationControlled")
+    args.append("--disable-webrtc")
+    args.append("--disable-dev-shm-usage")
+    args.append('--no-first-run')
+    args.append('--force-webrtc-ip-handling-policy')
     firefox_prefs = {
         "media.peerconnection.enabled": False,  # Отключает WebRTC
         "media.navigator.enabled": False,  # Отключает WebRTC API
@@ -212,6 +217,7 @@ def get_browser(p, proxy_url):
     }
     return p.firefox.launch(
         headless=False,
+        args=args,
         ignore_default_args=["--enable-automation"],
         # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
         # proxy={"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
