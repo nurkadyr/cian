@@ -195,7 +195,6 @@ def extract_urls_from_folder():
                         if count < 22400:
                             continue
                         if not is_url_exists(conn, url):
-                            yield "https://www.browserscan.net/"
                             yield url
     conn.close()
 
@@ -216,7 +215,7 @@ def get_browser(p, proxy_url):
         "timezone.override": "Europe/Moscow",  # Принудительно ставим тайм-зону
     }
     return p.firefox.launch(
-        headless=False,
+        headless=True,
         args=args,
         ignore_default_args=["--enable-automation"],
         # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
