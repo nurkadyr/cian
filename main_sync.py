@@ -77,7 +77,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             print(response.status, page_url, proxy_url)
             return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
-        text = date_element.text_content(timeout=5000)
+        text = date_element.text_content(timeout=11000)
         yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
         today_date = datetime.datetime.now().strftime("%d %b")
         month_translation = {
@@ -140,6 +140,8 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             data
         )
     except Exception as e:
+        if "Timeout 11000ms exceeded" in e:
+            print(page.content())
         print(e, page_url, proxy_url)
         return False, page_url, None, None, None
 
@@ -263,7 +265,7 @@ def worker(queue, proxy_url):
                 break  # Завершаем процесс
 
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
-            time.sleep(random.randint(10, 30))
+            time.sleep(random.randint(10, 20))
             print("success", success)
             if not success and url is not None:
                 queue.put(url)

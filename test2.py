@@ -42,14 +42,14 @@ def scrape_data(playwright: Playwright):
         ignore_default_args=["--enable-automation"],
         # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
         # proxy={"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
-        proxy={'server': 'http://37.139.58.84:64536', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+        proxy={'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
     )
 
     # load_cookies(context)
     page = browser.new_page()
     # stealth_sync(page)
 
-    response = page.goto("https://www.browserscan.net/")
+    response = page.goto("https://ekb.cian.ru/rent/flat/312794142/")
     print(response.status)
     input("Press ENTER to exit:")
     # save_cookies(context)
