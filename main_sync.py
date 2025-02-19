@@ -14,17 +14,17 @@ from io import BytesIO
 from PIL import Image
 from curl_cffi import requests
 from pymongo import MongoClient
-from undetected_playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright
 from fake_useragent import UserAgent
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
 # ua = UserAgent(os="Windows")
-# ua.min_version = 131
-# print(ua.chrome.replace("131","133"))
+# ua.min_version = 119
+# print(ua.firefox)
 # exit()
 MAX_QUEUE_SIZE = 10
-MAX_WORKERS = 1
+MAX_WORKERS = 10
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -69,14 +69,15 @@ def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, con
 
 def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        response = page.goto(page_url, timeout=120000, wait_until="load")
+        response = page.goto(page_url, timeout=120000, wait_until="networkidle")
+
         if response.status == 404:
             return False, None, None, None, None
         if response.status != 200:
             print(response.status, page_url, proxy_url)
             return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
-        text = date_element.inner_text(timeout=5000)
+        text = date_element.text_content(timeout=5000)
         yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
         today_date = datetime.datetime.now().strftime("%d %b")
         month_translation = {
@@ -198,32 +199,30 @@ def extract_urls_from_folder():
     conn.close()
 
 
-def get_browser(p, proxy_url, profile_path):
-    return p.chromium.launch_persistent_context(
-        user_data_dir=profile_path,
-        headless=True,
-        args=[
-            "--disable-blink-features=AutomationControlled",
-            "--disable-webrtc",
-            "--disable-features=WebRTC,WebGL,Canvas",
-            "--disable-dev-shm-usage",
-            "--no-sandbox"
-        ],
+def get_browser(p, proxy_url):
+    args = []
+    args.append("--disable-blink-features=AutomationControlled")
+    args.append("--disable-features=WebRTC,WebGL,Canvas")
+    args.append("--disable-webrtc")
+    args.append("--disable-dev-shm-usage")
+    args.append('--no-first-run')
+    args.append('--force-webrtc-ip-handling-policy')
+    firefox_prefs = {
+        "media.peerconnection.enabled": False,  # Отключает WebRTC
+        "media.navigator.enabled": False,  # Отключает WebRTC API
+        "media.peerconnection.ice.default_address_only": True,  # Не отправляет локальный IP
+        "media.peerconnection.ice.no_host": True,  # Запрещает WebRTC запрашивать локальный IP
+        "privacy.resistFingerprinting": False,  # Отключаем защиту от подмены TimeZone
+        "timezone.override": "Europe/Moscow",  # Принудительно ставим тайм-зону
+    }
+    return p.firefox.launch(
+        headless=False,
+        args=args,
+        ignore_default_args=["--enable-automation"],
+        # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+        # proxy={"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
         proxy=proxy_url,
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-        viewport={"width": 1200, "height": 1400},
-        extra_http_headers={
-            "accept-language": "en-US,en;q=0.9",
-            "referer": "https://www.google.com/",
-            "Sec-Ch-Ua-Platform": '"Windows"',
-            "Sec-Fetch-Site": "cross-site",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Ch-Ua-Mobile": "?0",
-            "upgrade-insecure-requests": "1"
-        },
-        timezone_id="Europe/Moscow",
-
+        firefox_user_prefs=firefox_prefs
     )
 
 
@@ -235,33 +234,47 @@ def worker(queue, proxy_url):
     db_screenshots = client["adsScreenshots2"]
     conn = get_connection()
 
-    error_count = 0
-    while True:
-        urls_chunk = queue.get()
-        print("start", urls_chunk, queue.qsize())
-        if urls_chunk is None:
-            print("worker end")
-            break  # Завершаем процесс
-        with sync_playwright() as p:
-            profile_path = os.path.join(
-                os.getcwd(),
-                "user_data",
-                hashlib.sha256(proxy_url["server"].encode()).hexdigest()
-            )
-            browser = get_browser(p, proxy_url, profile_path)
+    with sync_playwright() as p:
+        browser = get_browser(p, proxy_url)
+        context = browser.new_context(
+            timezone_id="Europe/Moscow",
+            permissions=['geolocation'],
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+            viewport={"width": random.choice([1200,1300,1400]), "height": random.choice([1600,1500,1400])},
+            extra_http_headers={
+                "accept-language": "en-US,en;q=0.9",
+                "referer": "https://www.google.com/",
+                "Sec-Ch-Ua-Platform": '"Windows"',
+                "Sec-Fetch-Site": "cross-site",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Ch-Ua-Mobile": "?0",
+                "upgrade-insecure-requests": "1"
+            }
+        )
+        page = context.new_page()
+        error_count = 0
+        while True:
+            urls_chunk = queue.get()
+            print("start", urls_chunk, queue.qsize())
+            if urls_chunk is None:
+                print("worker end")
+                break  # Завершаем процесс
 
-            page = browser.new_page()
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
+            time.sleep(random.randint(5, 10))
+            print("success", success)
             if not success and url is not None:
-                shutil.rmtree(profile_path)
                 queue.put(url)
                 error_count += 1
                 if error_count == 3:
+                    page = context.new_page()
+                if error_count == 6:
                     break
             if success:
                 error_count = 0
-            page.close()
-            browser.close()
+        page.close()
+        browser.close()
     conn.close()
 
 
@@ -275,47 +288,26 @@ async def producer(queue):
 
 async def main():
     proxy_list = [
-        # {
-        #     "server": "http://176.103.95.57:63822",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # },
-        # {
-        #     "server": "http://212.193.168.53:61934",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # },
-        # {
-        #     "server": "http://195.209.145.142:62796",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # },
-        #
-        # {
-        #     "server": "http://2.56.138.111:64590",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # },
-        {
-            "server": "http://45.145.171.15:62704",
-            "username": "JKThSkEu",
-            "password": "whh3hUFn"
-        },
-        # {
-        #     "server": "http://212.192.199.170:63280",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # },
-        # {
-        #     "server": "http://46.150.251.222:63826",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # },
-        # {
-        #     "server": "http://154.223.200.11:63054",
-        #     "username": "JKThSkEu",
-        #     "password": "whh3hUFn"
-        # }
+        {'server': 'http://91.230.38.134:62090', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://91.221.39.231:62104', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://91.220.229.74:64080', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.146.24.2:63348', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://77.83.80.22:63366', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://176.103.93.29:64892', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://194.226.166.247:62364', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
     ]
 
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()

@@ -31,12 +31,15 @@ def scrape_data(playwright: Playwright):
     args.append("--disable-webrtc")
     args.append("--disable-dev-shm-usage")
     args.append("--no-sandbox")
+    args.append('--no-first-run')
+    args.append('--force-webrtc-ip-handling-policy')
     browser = playwright.chromium.launch_persistent_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
         user_data_dir=profile_path,
         headless=False,
         args=args,
-        timezone_id="Europe/Volgograd",
+        timezone_id="Europe/Moscow",
+        ignore_default_args=["--enable-automation"],
         # proxy={'server': 'http://212.60.7.221:63968', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
         # proxy={"server": "http://45.153.52.106:63452", "username": "JKThSkEu", "password": "whh3hUFn"},
         proxy={'server': 'http://37.139.58.84:64536', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
