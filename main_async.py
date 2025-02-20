@@ -25,7 +25,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # exit()
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 30
+MAX_WORKERS = 24
 executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.exe")
 
 
@@ -269,7 +269,7 @@ async def aworker(queue, proxy_url):
                     print("break queue")
                     break
                 parse_count += 1
-                if parse_count % 25 == 0:
+                if parse_count % 50 == 0:
                     await browser.close()
                     shutil.rmtree(profile_path)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
@@ -290,13 +290,13 @@ async def aworker(queue, proxy_url):
                         error_count += 1
                     if success:
                         error_count = 0
-                if 3 <= error_count < 6:
+                if error_count == 3:
                     await browser.close()
                     shutil.rmtree(profile_path)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url,profile_path)
                     pages = await get_page(browser)
-                if error_count > 6:
+                if error_count >= 6:
                     print("break error")
                     break
                 print("worker", time.time()-start_time1)
@@ -325,7 +325,12 @@ async def producer(queue):
 
 
 async def main():
+
     proxy_list = [
+        {'server': 'http://195.19.168.187:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://195.19.175.154:62800', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://176.103.95.57:63822', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://212.193.168.53:61934', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://91.230.38.134:62090', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://91.221.39.231:62104', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://91.220.229.74:64080', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
@@ -334,13 +339,13 @@ async def main():
         {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://176.103.93.29:64892', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://194.226.166.247:62364', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://176.103.93.29:64892', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://194.226.166.247:62364', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         # {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         # {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         # {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
