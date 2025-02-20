@@ -22,7 +22,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # print(ua.firefox)
 # exit()
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 36
+MAX_WORKERS = 20
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -306,8 +306,8 @@ async def main():
         {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        # {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        # {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+        {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
     ]
 
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
