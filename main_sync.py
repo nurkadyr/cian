@@ -72,7 +72,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
         if response.status == 404:
             return False, None, None, None, None
         if response.status != 200:
-            print(response.status, page_url, proxy_url)
+            print(response.status, page_url, proxy_url, datetime.datetime.now())
             return False, page_url, None, None, None
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = date_element.text_content(timeout=11000)
@@ -117,7 +117,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             json_data = page.locator('script[type="application/ld+json"]').inner_text(timeout=10000)
             images = json.loads(json_data).get("image", [])
         except Exception as e:
-            print(e)
+            print(e, datetime.datetime.now())
             images = []
 
         data = {
@@ -138,7 +138,7 @@ def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy
             data
         )
     except Exception as e:
-        print(e, page_url, proxy_url)
+        print(e, page_url, proxy_url, datetime.datetime.now())
         return False, page_url, None, None, None
 
 
@@ -167,10 +167,10 @@ def download_image(url, db_photos, proxy) -> (str, str):
 
             return url, str(insert_photo(db_photos, image_base64).inserted_id)
         else:
-            print(f"Failed to download {url}, status: {response.status_code}")
+            print(f"Failed to download {url}, status: {response.status_code}", datetime.datetime.now())
 
     except Exception as e:
-        print(f"Error downloading {url}: {e}")
+        print(f"Error downloading {url}: {e}", datetime.datetime.now())
 
 
 def extract_urls_from_folder():
@@ -188,9 +188,9 @@ def extract_urls_from_folder():
                     if url:
                         count += 1
                         if count % 1000 == 0:
-                            print(count)
+                            print(count, datetime.datetime.now())
 
-                        if count < 32400:
+                        if count < 34470:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -250,18 +250,23 @@ def worker(queue, proxy_url):
     conn = get_connection()
 
     with sync_playwright() as p:
+        error_count = 0
+        parse_count = 1
         browser = get_browser(p, proxy_url)
         page = get_page(browser)
-        error_count = 0
         while True:
+            if parse_count % 50 == 0:
+                browser.close()
+                browser = get_browser(p, proxy_url)
+                page = get_page(browser)
             urls_chunk = queue.get()
-            print("start", urls_chunk, queue.qsize())
+            print("start", urls_chunk, queue.qsize(), datetime.datetime.now())
             if urls_chunk is None:
-                print("worker end")
+                print("worker end", datetime.datetime.now())
                 break  # Завершаем процесс
 
             success, url = parse_url(page, urls_chunk, proxy_url, db_html, db_photos, db_screenshots, conn)
-            print("success", success)
+            print("success", success, datetime.datetime.now())
             if not success and url is not None:
                 queue.put(url)
                 error_count += 1
@@ -292,14 +297,11 @@ async def main():
         {'server': 'http://91.220.229.74:64080', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://45.146.24.2:63348', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://77.83.80.22:63366', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-
-
-
-        # {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        # {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        # {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        # {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        # {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         # {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         # {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         # {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
@@ -352,4 +354,4 @@ if __name__ == "__main__":
     #     conn
     # )
     # conn.close()
-    print(time.time() - start_time)
+    print(time.time() - start_time, datetime.datetime.now())
