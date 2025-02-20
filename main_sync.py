@@ -22,7 +22,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # print(ua.firefox)
 # exit()
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 10
+MAX_WORKERS = 20
 
 
 def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
