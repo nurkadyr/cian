@@ -251,10 +251,11 @@ def worker(queue, proxy_url):
 
     with sync_playwright() as p:
         error_count = 0
-        parse_count = 1
+        parse_count = 0
         browser = get_browser(p, proxy_url)
         page = get_page(browser)
         while True:
+            parse_count += 1
             if parse_count % 50 == 0:
                 browser.close()
                 browser = get_browser(p, proxy_url)
