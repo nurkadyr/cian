@@ -273,7 +273,7 @@ async def aworker(queue, proxy_url):
                     await browser.close()
                     shutil.rmtree(profile_path)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
-                    browser = await get_browser(p, proxy_url,profile_path)
+                    browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
                 tasks = [
                     parse_url(page, urls_chunk[i], proxy_url, db_html, db_photos, db_screenshots, conn)
@@ -293,13 +293,14 @@ async def aworker(queue, proxy_url):
                 if error_count == 3:
                     await browser.close()
                     shutil.rmtree(profile_path)
+                    await asyncio.sleep(3600)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
-                    browser = await get_browser(p, proxy_url,profile_path)
+                    browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
                 if error_count >= 6:
                     print("break error")
                     break
-                print("worker", time.time()-start_time1)
+                print("worker", time.time() - start_time1)
             await browser.close()
     finally:
         shutil.rmtree(profile_path)
@@ -325,7 +326,6 @@ async def producer(queue):
 
 
 async def main():
-
     proxy_list = [
         {'server': 'http://195.19.168.187:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://195.19.175.154:62800', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
