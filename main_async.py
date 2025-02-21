@@ -79,7 +79,7 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
 
 async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        response = await page.goto(page_url, timeout=300000, wait_until="networkidle")
+        response = await page.goto(page_url, timeout=120000, wait_until="load")
 
         if response.status == 404:
             return False, None, None, None, None
@@ -204,7 +204,18 @@ def extract_urls_from_folder():
                             yield url
     conn.close()
 
+user_agent_dict = {
+    True: [
+        "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
+        "Mozilla/5.0 (Linux; Android 13; Samsung Galaxy S23) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
+    ],
+    False: [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 
+    ]
+}
 async def get_browser(p, proxy_url, profile_path):
     args = []
     args.append("--disable-blink-features=AutomationControlled")
@@ -214,12 +225,14 @@ async def get_browser(p, proxy_url, profile_path):
     args.append("--no-sandbox")
     args.append('--no-first-run')
     args.append('--force-webrtc-ip-handling-policy')
+    is_mobile = random.choice([True, False])
     return await p.chromium.launch_persistent_context(
         user_data_dir=profile_path,
         executable_path=executable_path,
         headless=True,
         args=args,
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        is_mobile=is_mobile,
+        user_agent=random.choice(user_agent_dict[is_mobile]),
         timezone_id="Europe/Moscow",
         ignore_default_args=["--enable-automation"],
         proxy=proxy_url,
