@@ -268,7 +268,7 @@ async def aworker(queue, proxy_url):
                     print("break queue")
                     break
                 parse_count += 1
-                if parse_count % 15 == 0:
+                if parse_count % 10 == 0:
                     await browser.close()
                     shutil.rmtree(profile_path)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
@@ -292,7 +292,7 @@ async def aworker(queue, proxy_url):
                 if error_count%3 == 0 and error_count > 0:
                     await browser.close()
                     shutil.rmtree(profile_path)
-                    await asyncio.sleep(2000*error_count)
+                    await asyncio.sleep(4000*error_count)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
