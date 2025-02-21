@@ -30,7 +30,7 @@ executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.ex
 
 
 async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
-    print("start", page_url, datetime.datetime.now())
+    print("start", page_url,proxy_url["server"], datetime.datetime.now())
     success, url, html_id, image_id, data = await scrape_page(
         page,
         page_url,
@@ -198,10 +198,9 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 94443:
+                        if count < 147502:
                             continue
                         if not is_url_exists(conn, url):
-                            # yield "https://www.browserscan.net/"
                             yield url
     conn.close()
 
@@ -269,7 +268,7 @@ async def aworker(queue, proxy_url):
                     print("break queue")
                     break
                 parse_count += 1
-                if parse_count % 50 == 0:
+                if parse_count % 15 == 0:
                     await browser.close()
                     shutil.rmtree(profile_path)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
@@ -279,7 +278,7 @@ async def aworker(queue, proxy_url):
                     parse_url(page, urls_chunk[i], proxy_url, db_html, db_photos, db_screenshots, conn)
                     for i, page in enumerate(pages)
                 ]
-                results = await asyncio.gather(*tasks, return_exceptions=True)
+                results = await asyncio.gather(*tasks)
                 for success, url in results:
                     if not success and url is not None:
                         error_urls.append(url)
@@ -290,17 +289,17 @@ async def aworker(queue, proxy_url):
                         error_count += 1
                     if success:
                         error_count = 0
-                if error_count == 3:
+                if error_count%3 == 0:
                     await browser.close()
                     shutil.rmtree(profile_path)
-                    await asyncio.sleep(3600)
+                    await asyncio.sleep(2000*error_count)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
-                if error_count >= 6:
+                if error_count == 14:
                     print("break error")
                     break
-                print("worker", time.time() - start_time1)
+                print("worker",success, time.time() - start_time1)
             await browser.close()
     finally:
         shutil.rmtree(profile_path)
@@ -327,29 +326,29 @@ async def producer(queue):
 
 async def main():
     proxy_list = [
-        {'server': 'http://195.19.168.187:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://195.19.175.154:62800', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://176.103.95.57:63822', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://212.193.168.53:61934', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.230.38.134:62090', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.221.39.231:62104', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.220.229.74:64080', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.146.24.2:63348', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://77.83.80.22:63366', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://176.103.93.29:64892', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://194.226.166.247:62364', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://195.19.168.187:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://195.19.175.154:62800', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://176.103.95.57:63822', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://212.193.168.53:61934', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://91.230.38.134:62090', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://91.221.39.231:62104', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://91.220.229.74:64080', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.146.24.2:63348', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://77.83.80.22:63366', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://176.103.93.29:64892', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://194.226.166.247:62364', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        # {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
     ]
 
