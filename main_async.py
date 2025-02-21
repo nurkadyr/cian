@@ -25,7 +25,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 # exit()
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 1
+MAX_WORKERS = 24
 executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.exe")
 
 
