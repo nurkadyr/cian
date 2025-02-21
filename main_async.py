@@ -79,7 +79,7 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
 
 async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        response = await page.goto(page_url, timeout=120000, wait_until="load")
+        response = await page.goto(page_url, timeout=120000, wait_until="networkidle")
 
         if response.status == 404:
             return False, None, None, None, None
@@ -198,7 +198,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 147502:
+                        if count < 149000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -261,6 +261,7 @@ async def aworker(queue, proxy_url):
             parse_count = 0
             error_count = 0
             error_urls = []
+            wait_count = 0
             while True:
                 start_time1 = time.time()
                 urls_chunk = queue.get()
@@ -289,14 +290,15 @@ async def aworker(queue, proxy_url):
                         error_count += 1
                     if success:
                         error_count = 0
-                if error_count%3 == 0 and error_count > 0:
+                if error_count == 3:
                     await browser.close()
                     shutil.rmtree(profile_path)
-                    await asyncio.sleep(4000*error_count)
+                    wait_count+=1
+                    await asyncio.sleep(12000*wait_count)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
-                if error_count == 14:
+                if error_count > 6:
                     print("break error")
                     break
                 print("worker",success, time.time() - start_time1)
