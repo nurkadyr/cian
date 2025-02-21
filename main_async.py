@@ -79,7 +79,7 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
 
 async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
-        response = await page.goto(page_url, timeout=120000, wait_until="networkidle")
+        response = await page.goto(page_url, timeout=300000, wait_until="networkidle")
 
         if response.status == 404:
             return False, None, None, None, None
