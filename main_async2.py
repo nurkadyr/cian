@@ -266,7 +266,7 @@ async def aworker(queue, proxy_url):
             error_urls = []
             wait_count = 0
             while True:
-                await asyncio.sleep(random.randint(10, 30))
+                await asyncio.sleep(random.randint(10, 15))
                 start_time1 = time.time()
                 urls_chunk = queue.get()
                 if urls_chunk is None:
