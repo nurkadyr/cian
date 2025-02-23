@@ -114,12 +114,8 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
         for selector in selectors:
             await page.locator(selector).evaluate_all("elements => elements.forEach(el => el.remove())")
 
-        screenshot_path = f"screenshot/{uuid.uuid4()}.jpeg"
-        await page.locator("body").screenshot(path=screenshot_path, type="jpeg", quality=25)
-
-        with open(screenshot_path, "rb") as img_file:
-            base64_image = base64.b64encode(img_file.read()).decode("utf-8")
-        os.remove(screenshot_path)
+        screenshot_bytes = await page.locator("body").screenshot(type="jpeg", quality=25)
+        base64_image = base64.b64encode(screenshot_bytes).decode("utf-8")
         try:
             json_data = await page.locator('script[type="application/ld+json"]').inner_text(timeout=3000)
             images = json.loads(json_data).get("image", [])
