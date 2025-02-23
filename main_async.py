@@ -26,6 +26,7 @@ executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.ex
 
 async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
     print("start", page_url, proxy_url["server"], datetime.datetime.now())
+    start = time.time()
     success, url, html_id, image_id, data = await scrape_page(
         page,
         page_url,
@@ -35,7 +36,9 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
         db_screenshots,
         proxy_url
     )
+    print("scrape_page",time.time() - start)
     if success:
+        start = time.time()
         product_id = insert_product(
             conn,
             source=1, category=2, segment_on_source=3, vehicle_sub_type=4, region=5,
@@ -47,6 +50,8 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
             last_modification_date=datetime.datetime.utcnow(),
             parser_version=1.0, weapon_kind=2, machine_name="Server-01"
         )
+        print("insert_product", time.time() - start)
+        start = time.time()
         product_file_id = insert_product_files(
             conn,
             url=None,
@@ -56,7 +61,10 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
             creation_time=datetime.datetime.utcnow(),
             status=0
         )
+        print("insert_product_files", time.time() - start)
+        start = time.time()
         update_unique_status(db_photos, db_screenshots, "screenshots", image_id, product_id, product_file_id)
+        print("update_unique_status", time.time() - start)
         for image_url, mongo_id in data["images_mongo"]:
             product_file_id = insert_product_files(
                 conn,
@@ -74,7 +82,9 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
 
 async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
+        start = time.time()
         response = await page.goto(page_url, timeout=120000, wait_until="load")
+        print("page.goto", time.time() - start)
 
         if response.status == 404:
             return False, None, None, None, None
@@ -132,7 +142,9 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
         }
 
         html = await page.content()
+        start = time.time()
         data["images_mongo"] = await download_image_list(images, db_photos, proxy)
+        print("download_image_list", time.time() - start)
         return (
             True,
             page_url,
@@ -269,7 +281,6 @@ async def aworker(queue, proxy_url):
                 # await asyncio.sleep(random.randint(10, 15))
                 start_time1 = time.time()
                 urls_chunk = queue.get()
-                print(time.time() - start_time1, queue.qsize())
                 if urls_chunk is None:
                     print("break queue")
                     break

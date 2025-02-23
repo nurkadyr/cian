@@ -193,7 +193,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 601000:
+                        if count < 609000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -266,7 +266,6 @@ async def aworker(queue, proxy_url):
             error_urls = []
             wait_count = 0
             while True:
-                await asyncio.sleep(random.randint(10, 15))
                 start_time1 = time.time()
                 urls_chunk = queue.get()
                 if urls_chunk is None:
