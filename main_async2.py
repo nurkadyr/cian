@@ -297,7 +297,7 @@ async def aworker(queue, proxy_url):
                     await browser.close()
                     shutil.rmtree(profile_path)
                     wait_count += 1
-                    await asyncio.sleep(12000 * wait_count)
+                    await asyncio.sleep(1200 * wait_count)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
