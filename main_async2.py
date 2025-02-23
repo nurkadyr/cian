@@ -20,7 +20,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 16
+MAX_WORKERS = 15
 executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.exe")
 
 
@@ -147,7 +147,7 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
 
 async def download_image_list(images, db_photos, proxy):
     proxy_url = f"http://{proxy['username']}:{proxy['password']}@{proxy['server'].replace('http://', '')}"
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
         tasks = [download_image(session, url, db_photos, proxy_url) for url in images]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -220,7 +220,7 @@ async def get_browser(p, proxy_url, profile_path):
     return await p.chromium.launch_persistent_context(
         user_data_dir=profile_path,
         executable_path=executable_path,
-        headless=True,
+        headless=False,
         args=args,
         user_agent=user_agent_dict[platform],
         timezone_id="Europe/Moscow",
@@ -332,7 +332,6 @@ async def producer(queue):
 
 async def main():
     proxy_list = [
-        {'server': 'http://195.209.145.142:62796', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://37.139.58.84:64536', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://2.56.138.111:64590', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
         {'server': 'http://45.145.171.15:62704', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
