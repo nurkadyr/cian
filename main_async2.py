@@ -220,7 +220,7 @@ async def get_browser(p, proxy_url, profile_path):
     return await p.chromium.launch_persistent_context(
         user_data_dir=profile_path,
         executable_path=executable_path,
-        headless=False,
+        headless=True,
         args=args,
         user_agent=user_agent_dict[platform],
         timezone_id="Europe/Moscow",
