@@ -12,17 +12,12 @@ from io import BytesIO
 
 import aiohttp
 from PIL import Image
-from curl_cffi import requests
 from playwright.async_api import async_playwright
 from pymongo import MongoClient
 
 from mongo import insert_photo, insert_html_data, insert_screenshot, update_unique_status
 from ms import insert_product, insert_product_files, get_connection, is_url_exists
 
-# ua = UserAgent(os="Windows")
-# ua.min_version = 119
-# print(ua.firefox)
-# exit()
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
 MAX_WORKERS = 24
@@ -30,7 +25,7 @@ executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.ex
 
 
 async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
-    print("start", page_url,proxy_url["server"], datetime.datetime.now())
+    print("start", page_url, proxy_url["server"], datetime.datetime.now())
     success, url, html_id, image_id, data = await scrape_page(
         page,
         page_url,
@@ -204,18 +199,14 @@ def extract_urls_from_folder():
                             yield url
     conn.close()
 
-user_agent_dict = {
-    True: [
-        "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
-        "Mozilla/5.0 (Linux; Android 13; Samsung Galaxy S23) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
-    ],
-    False: [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 
-    ]
+user_agent_dict = {
+    "Windows":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "macOS":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Linux":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 }
+
+
 async def get_browser(p, proxy_url, profile_path):
     args = []
     args.append("--disable-blink-features=AutomationControlled")
@@ -225,14 +216,13 @@ async def get_browser(p, proxy_url, profile_path):
     args.append("--no-sandbox")
     args.append('--no-first-run')
     args.append('--force-webrtc-ip-handling-policy')
-    is_mobile = random.choice([True, False])
+    platform = random.choice(list(user_agent_dict.keys()))
     return await p.chromium.launch_persistent_context(
         user_data_dir=profile_path,
         executable_path=executable_path,
-        headless=True,
+        headless=False,
         args=args,
-        is_mobile=is_mobile,
-        user_agent=random.choice(user_agent_dict[is_mobile]),
+        user_agent=user_agent_dict[platform],
         timezone_id="Europe/Moscow",
         ignore_default_args=["--enable-automation"],
         proxy=proxy_url,
@@ -240,7 +230,7 @@ async def get_browser(p, proxy_url, profile_path):
         extra_http_headers={
             "accept-language": "en-US,en;q=0.9",
             "referer": "https://www.google.com/",
-            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Ch-Ua-Platform": f'"{platform}"',
             "Sec-Fetch-Site": "cross-site",
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Dest": "document",
@@ -282,7 +272,7 @@ async def aworker(queue, proxy_url):
                     print("break queue")
                     break
                 parse_count += 1
-                if parse_count % 10 == 0:
+                if parse_count % 25 == 0:
                     await browser.close()
                     shutil.rmtree(profile_path)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
@@ -306,15 +296,15 @@ async def aworker(queue, proxy_url):
                 if error_count == 3:
                     await browser.close()
                     shutil.rmtree(profile_path)
-                    wait_count+=1
-                    await asyncio.sleep(12000*wait_count)
+                    wait_count += 1
+                    await asyncio.sleep(12000 * wait_count)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
                 if error_count > 6:
                     print("break error")
                     break
-                print("worker",success, time.time() - start_time1)
+                print("worker", success, time.time() - start_time1)
             await browser.close()
     finally:
         shutil.rmtree(profile_path)
