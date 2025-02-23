@@ -20,7 +20,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 24
+MAX_WORKERS = 16
 executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.exe")
 
 
@@ -193,7 +193,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 151000:
+                        if count < 600000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -332,30 +332,22 @@ async def producer(queue):
 
 async def main():
     proxy_list = [
-        {'server': 'http://195.19.168.187:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://195.19.175.154:62800', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://176.103.95.57:63822', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://212.193.168.53:61934', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.230.38.134:62090', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.221.39.231:62104', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.220.229.74:64080', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.146.24.2:63348', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://77.83.80.22:63366', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.91.239.80:63076', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.132.38.19:61936', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.149.135.251:62188', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.150.61.124:62232', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.139.126.33:63682', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.146.230.22:63922', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://45.141.197.111:64062', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://91.206.68.144:63518', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://176.103.93.29:64892', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://194.226.166.247:62364', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://194.226.20.194:64998', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://62.76.155.119:62868', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://85.142.66.146:63570', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://85.142.254.166:62854', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
-        {'server': 'http://154.209.208.230:62840', 'username': 'JKThSkEu', 'password': 'whh3hUFn'}
+        {'server': 'http://195.209.145.142:62796', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://37.139.58.84:64536', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://2.56.138.111:64590', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://45.145.171.15:62704', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://212.192.199.170:63280', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://46.150.251.222:63826', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://195.208.91.83:62158', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://154.223.200.11:63054', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://212.193.171.40:63628', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://195.209.145.252:63134', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://195.208.95.33:63172', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://176.103.86.191:64110', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://84.54.28.82:63784', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://84.54.31.36:63034', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://91.188.230.180:64558', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
+        {'server': 'http://154.209.209.241:62710', 'username': 'JKThSkEu', 'password': 'whh3hUFn'},
     ]
 
     queue = multiprocessing.Queue()  # ✅ Используем multiprocessing.Queue()
