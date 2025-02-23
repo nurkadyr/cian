@@ -193,7 +193,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 155000:
+                        if count < 166000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
@@ -266,9 +266,10 @@ async def aworker(queue, proxy_url):
             error_urls = []
             wait_count = 0
             while True:
-                await asyncio.sleep(random.randint(10, 15))
+                # await asyncio.sleep(random.randint(10, 15))
                 start_time1 = time.time()
                 urls_chunk = queue.get()
+                print(time.time() - start_time1, queue.qsize())
                 if urls_chunk is None:
                     print("break queue")
                     break
@@ -298,7 +299,7 @@ async def aworker(queue, proxy_url):
                     await browser.close()
                     shutil.rmtree(profile_path)
                     wait_count += 1
-                    await asyncio.sleep(12000 * wait_count)
+                    await asyncio.sleep(1200 * wait_count)
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
