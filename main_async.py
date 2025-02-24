@@ -395,7 +395,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    shutil.rmtree(os.path.join(os.getcwd(), f"user_data"))
+    if os.path.isdir(os.path.join(os.getcwd(), f"user_data")):
+        shutil.rmtree(os.path.join(os.getcwd(), f"user_data"))
     asyncio.run(main())
 # 21:02 - 48000
 # 21:10 - 49000
