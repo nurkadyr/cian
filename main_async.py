@@ -26,6 +26,7 @@ executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.ex
 
 async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
     print("start", page_url, proxy_url["server"], datetime.datetime.now())
+    start = time.time()
     success, url, html_id, image_id, data = await scrape_page(
         page,
         page_url,
@@ -35,7 +36,9 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
         db_screenshots,
         proxy_url
     )
+    print("scrape_page",time.time() - start)
     if success:
+        start_g = time.time()
         start = time.time()
         product_id = insert_product(
             conn,
@@ -63,8 +66,8 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
         start = time.time()
         update_unique_status(db_photos, db_screenshots, "screenshots", image_id, product_id, product_file_id)
         print("update_unique_status", time.time() - start)
+        start = time.time()
         for image_url, mongo_id in data["images_mongo"]:
-            start = time.time()
             product_file_id = insert_product_files(
                 conn,
                 url=image_url,
@@ -74,10 +77,9 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
                 creation_time=datetime.datetime.utcnow(),
                 status=0
             )
-            print("insert_product_files", time.time() - start)
-            start = time.time()
             update_unique_status(db_photos, db_screenshots, "photos", mongo_id, product_id, product_file_id)
-            print("update_unique_status", time.time() - start)
+        print("insert_product_files", time.time() - start)
+        print("scrape_page", time.time() - start_g)
     return success, url
 
 
@@ -297,11 +299,14 @@ async def aworker(queue, proxy_url):
                     profile_path = os.path.join(os.getcwd(), f"user_data/{uuid.uuid4()}")
                     browser = await get_browser(p, proxy_url, profile_path)
                     pages = await get_page(browser)
+                start = time.time()
                 tasks = [
                     parse_url(page, urls_chunk[i], proxy_url, db_html, db_photos, db_screenshots, conn)
                     for i, page in enumerate(pages)
                 ]
                 results = await asyncio.gather(*tasks)
+                print("tasks",time.time()-start)
+
                 for success, url in results:
                     if not success and url is not None:
                         error_urls.append(url)
