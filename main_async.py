@@ -20,7 +20,7 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 24
+MAX_WORKERS = 1
 executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.exe")
 
 
@@ -74,15 +74,18 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
 
 async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots, proxy_url):
     try:
+        start = time.time()
         response = await page.goto(page_url, timeout=120000, wait_until="load")
-
+        print("page.goto",time.time()-start)
         if response.status == 404:
             return False, None, None, None, None
         if response.status != 200:
             print(response.status, page_url, proxy_url, datetime.datetime.now())
             return False, page_url, None, None, None
+        start = time.time()
         date_element = page.locator('[data-testid="metadata-updated-date"] span')
         text = await date_element.text_content(timeout=5000)
+        print("date_element", time.time() - start)
         yesterday_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d %b")
         today_date = datetime.datetime.now().strftime("%d %b")
         month_translation = {
@@ -90,10 +93,11 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
             "May": "мая", "Jun": "июн", "Jul": "июл", "Aug": "авг",
             "Sep": "сен", "Oct": "окт", "Nov": "ноя", "Dec": "дек"
         }
-
         for eng, rus in month_translation.items():
             yesterday_date = yesterday_date.replace(eng, rus)
             today_date = today_date.replace(eng, rus)
+        start = time.time()
+
         if "вчера" in text:
             new_text = text.replace("вчера", yesterday_date)
             await date_element.evaluate('(node, newText) => node.innerText = newText', new_text)
@@ -101,7 +105,8 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
         if "сегодня" in text:
             new_text = text.replace("сегодня", today_date)
             await date_element.evaluate('(node, newText) => node.innerText = newText', new_text)
-
+        print("date_element2", time.time() - start)
+        start = time.time()
         selectors = [
             '[data-name="CardSection"]',
             '[data-name="CookiesNotification"]',
@@ -113,24 +118,33 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
 
         for selector in selectors:
             await page.locator(selector).evaluate_all("elements => elements.forEach(el => el.remove())")
-
+        print("selectors", time.time() - start)
+        start = time.time()
         screenshot_bytes = await page.locator("body").screenshot(type="jpeg", quality=25)
-
+        print("screenshot_bytes", time.time() - start)
+        start = time.time()
         base64_image = base64.b64encode(screenshot_bytes).decode("utf-8")
-
+        print("base64_image", time.time() - start)
+        start = time.time()
         try:
             json_data = await page.locator('script[type="application/ld+json"]').inner_text(timeout=3000)
             images = json.loads(json_data).get("image", [])
         except Exception as e:
             print(e, datetime.datetime.now())
             images = []
-
+        print("json_data", time.time() - start)
+        start = time.time()
         data = {
             "region": (await page.locator('[itemprop="name"]').nth(0).inner_text()).split(" ")[-1]
         }
-
+        print("region", time.time() - start)
+        start = time.time()
         html = await page.content()
+        print("content", time.time() - start)
+        start = time.time()
         data["images_mongo"] = await download_image_list(images, db_photos, proxy)
+        print("download_image_list", time.time() - start)
+
         return (
             True,
             page_url,
@@ -191,7 +205,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 166000:
+                        if count < 186000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
