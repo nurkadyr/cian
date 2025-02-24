@@ -36,6 +36,7 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
         proxy_url
     )
     if success:
+        start = time.time()
         product_id = insert_product(
             conn,
             source=1, category=2, segment_on_source=3, vehicle_sub_type=4, region=5,
@@ -47,6 +48,8 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
             last_modification_date=datetime.datetime.utcnow(),
             parser_version=1.0, weapon_kind=2, machine_name="Server-01"
         )
+        print("insert_product",time.time() - start)
+        start = time.time()
         product_file_id = insert_product_files(
             conn,
             url=None,
@@ -56,8 +59,12 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
             creation_time=datetime.datetime.utcnow(),
             status=0
         )
+        print("insert_product", time.time() - start)
+        start = time.time()
         update_unique_status(db_photos, db_screenshots, "screenshots", image_id, product_id, product_file_id)
+        print("update_unique_status", time.time() - start)
         for image_url, mongo_id in data["images_mongo"]:
+            start = time.time()
             product_file_id = insert_product_files(
                 conn,
                 url=image_url,
@@ -67,8 +74,10 @@ async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshot
                 creation_time=datetime.datetime.utcnow(),
                 status=0
             )
+            print("insert_product_files", time.time() - start)
+            start = time.time()
             update_unique_status(db_photos, db_screenshots, "photos", mongo_id, product_id, product_file_id)
-
+            print("update_unique_status", time.time() - start)
     return success, url
 
 
@@ -76,7 +85,7 @@ async def scrape_page(page, page_url, proxy, db_html, db_photos, db_screenshots,
     try:
         start = time.time()
         response = await page.goto(page_url, timeout=120000, wait_until="load")
-        print("page.goto",time.time()-start)
+        print("page.goto", time.time() - start)
         if response.status == 404:
             return False, None, None, None, None
         if response.status != 200:
@@ -167,12 +176,8 @@ async def download_image_list(images, db_photos, proxy):
 
 
 async def download_image(session, url, db_photos, proxy) -> (str, str):
-    headers = {
-        "Referer": "https://www.cian.ru/"
-    }
-
     try:
-        async with session.get(url, headers=headers, proxy=proxy, timeout=60) as response:
+        async with session.get(url, proxy=proxy, timeout=60) as response:
             if response.status == 200:
                 content = await response.read()
                 img = Image.open(BytesIO(content))
