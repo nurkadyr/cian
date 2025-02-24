@@ -186,7 +186,7 @@ def extract_urls_from_folder():
                         if count % 1000 == 0:
                             print(count, datetime.datetime.now())
 
-                        if count < 187000:
+                        if count < 200000:
                             continue
                         if not is_url_exists(conn, url):
                             yield url
