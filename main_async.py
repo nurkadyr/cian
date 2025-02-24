@@ -20,8 +20,8 @@ from ms import insert_product, insert_product_files, get_connection, is_url_exis
 
 BATCH_SIZE = 1
 MAX_QUEUE_SIZE = 20
-MAX_WORKERS = 2
-executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome")
+MAX_WORKERS = 24
+executable_path = os.path.join(os.getcwd(), "chrome/ungoogled-chromium/chrome.exe")
 
 
 async def parse_url(page, page_url, proxy_url, db_html, db_photos, db_screenshots, conn):
@@ -241,8 +241,8 @@ async def aworker(queue, proxy_url):
     conn = None
     profile_path = None
     try:
-        client = MongoClient("mongodb://localhost:27017/")
-        # client = MongoClient("mongodb://192.168.1.59:27017/")
+        # client = MongoClient("mongodb://localhost:27017/")
+        client = MongoClient("mongodb://192.168.1.59:27017/")
         db_html = client["htmlData2"]
         db_photos = client["adsPhotos2"]
         db_screenshots = client["adsScreenshots2"]
