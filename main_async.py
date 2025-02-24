@@ -286,6 +286,7 @@ async def aworker(queue, proxy_url):
                 # await asyncio.sleep(random.randint(10, 15))
                 start_time1 = time.time()
                 urls_chunk = queue.get()
+                print("urls_chunk",time.time()-start_time1)
                 if urls_chunk is None:
                     print("break queue")
                     break
